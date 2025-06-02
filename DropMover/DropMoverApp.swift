@@ -36,5 +36,9 @@ struct DropMoverApp: App {
             ContentView()
         }
         .windowStyle(HiddenTitleBarWindowStyle())
+        
+        Settings {
+            SettingsView()
+        }
     }
 }

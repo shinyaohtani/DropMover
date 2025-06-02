@@ -21,14 +21,28 @@ struct ContentView: View {
     @State private var showResultAlert: Bool = false
     @State private var resultMessage: String = ""
 
-    // 親フォルダ（生成先）のデフォルトパス
-    private var parentFolderURL: URL {
+    @AppStorage("parentFolderPath") private var parentFolderPath: String = ""
+
+    private var computedParentFolderURL: URL {
         let fm = FileManager.default
-        let docs = fm.homeDirectoryForCurrentUser.appendingPathComponent("Documents/DropMover")
-        if !fm.fileExists(atPath: docs.path) {
-            try? fm.createDirectory(at: docs, withIntermediateDirectories: true)
+        let rawPath = parentFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !rawPath.isEmpty {
+            let expanded = (rawPath as NSString).expandingTildeInPath
+            let url = URL(fileURLWithPath: expanded, isDirectory: true)
+            if !fm.fileExists(atPath: url.path) {
+                try? fm.createDirectory(at: url, withIntermediateDirectories: true)
+            }
+            return url
         }
-        return docs
+
+        let defaultURL = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent("Documents")
+            .appendingPathComponent("DropMover")
+        if !fm.fileExists(atPath: defaultURL.path) {
+            try? fm.createDirectory(at: defaultURL, withIntermediateDirectories: true)
+        }
+        return defaultURL
     }
 
     // 日付文字列フォーマッタ
@@ -89,12 +103,15 @@ struct ContentView: View {
             }
             // ⑥ 処理結果をアラートで表示
             .alert(isPresented: $showResultAlert) {
-                Alert(title: Text("DropMover"),
-                      message: Text(resultMessage),
-                      dismissButton: .default(Text("OK")))
+                Alert(
+                    title: Text("DropMover"),
+                    message: Text(resultMessage),
+                    dismissButton: .default(Text("OK"))
+                )
             }
         }
     }
+
     // MARK: - ダイアログ（シート）本体
     private var dialogView: some View {
         VStack(spacing: 16) {
@@ -189,7 +206,8 @@ struct ContentView: View {
         for url in urls {
             do {
                 let res = try url.resourceValues(
-                    forKeys: [.addedToDirectoryDateKey, .contentModificationDateKey])
+                    forKeys: [.addedToDirectoryDateKey, .contentModificationDateKey]
+                )
                 let addedOpt = res.addedToDirectoryDate
                 let modifiedOpt = res.contentModificationDate
 
@@ -216,7 +234,7 @@ struct ContentView: View {
         let dateStr = dateFormatter.string(from: selectedDate)
         var baseFolderName = "\(dateStr) \(folderName)"
 
-        let parentURL = parentFolderURL
+        let parentURL = computedParentFolderURL
         var targetURL = parentURL.appendingPathComponent(baseFolderName)
 
         // 同名フォルダが存在する場合はサフィックスを付与してユニーク化
