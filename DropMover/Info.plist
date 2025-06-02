@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>com.aabce.DropMover</string>
+	<key>CFBundleName</key>
+	<string>DropMover</string>
+	<key>CFBundleDisplayName</key>
+	<string>DropMover</string>
+	<key>CFBundleExecutable</key>
+	<string>DropMover</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>11.0</string>
+	<key>NSFileAccessEnabled</key>
+	<true/>
+	<key>NSDocumentFolderUsageDescription</key>
+	<string>フォルダを作成し、ファイルを移動するためにアクセスが必要です。</string>
+</dict>
+</plist>

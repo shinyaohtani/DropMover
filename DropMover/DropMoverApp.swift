@@ -12,6 +12,8 @@ struct DropMoverApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .frame(minWidth: 400, minHeight: 200)
         }
+        .windowStyle(HiddenTitleBarWindowStyle()) // タイトルバーを隠して Drop 表示だけにする例
     }
 }
