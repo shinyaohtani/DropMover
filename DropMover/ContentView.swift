@@ -12,9 +12,11 @@ struct ContentView: View {
     // MARK: - 画面表示用ステート
     @State private var droppedURLs: [URL] = []
     @State private var showDialog: Bool = false
+    @State private var pendingShowDialog: Bool = false
+
     @State private var selectedDate: Date = Date()
-    @State private var folderName: String = ""
     @State private var defaultDate: Date = Date()
+    @State private var folderName: String = ""
 
     @State private var showResultAlert: Bool = false
     @State private var resultMessage: String = ""
@@ -56,9 +58,16 @@ struct ContentView: View {
             VStack {
                 Spacer()
                 Text("Drop files")
-                    .font(.system(size: 24, weight: .regular, design: .default))
+                    .font(.system(size: 24, weight: .regular))
                     .foregroundColor(Color.gray)
                 Spacer()
+            }
+        }
+        // selectedDate が更新され、pendingShowDialog が true のときにダイアログを開く
+        .onChange(of: selectedDate) { newDate in
+            if pendingShowDialog {
+                pendingShowDialog = false
+                showDialog = true
             }
         }
         // ダイアログをモーダルで出す
@@ -72,9 +81,7 @@ struct ContentView: View {
         .alert(isPresented: $showResultAlert) {
             Alert(title: Text("DropMover"),
                   message: Text(resultMessage),
-                  dismissButton: .default(Text("OK")) {
-                      // OK 押下でダイアログを閉じる
-                  })
+                  dismissButton: .default(Text("OK")))
         }
     }
 
@@ -94,9 +101,6 @@ struct ContentView: View {
                 Text("フォルダ名:")
                 TextField("フォルダ名を入力してください", text: $folderName)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: folderName) { newValue in
-                        // ここで必要ならバリデーション処理を追加
-                    }
             }
 
             // プレビュー表示
@@ -160,10 +164,8 @@ struct ContentView: View {
                 let calcDate = computeEarliestDate(from: tempURLs)
                 self.defaultDate = calcDate
                 self.selectedDate = calcDate
-                // selectedDate の反映が完了した後でシートを表示する
-                DispatchQueue.main.async {
-                    self.showDialog = true
-                }
+                // selectedDate の更新を待ってからダイアログを開くフラグを立てる
+                self.pendingShowDialog = true
             }
         }
 
@@ -178,28 +180,23 @@ struct ContentView: View {
             do {
                 let res = try url.resourceValues(
                     forKeys: [.addedToDirectoryDateKey, .contentModificationDateKey])
-                // 追加日と変更日のオプショナルを取得
                 let addedOpt = res.addedToDirectoryDate
                 let modifiedOpt = res.contentModificationDate
 
                 if let added = addedOpt, let modified = modifiedOpt {
-                    // 両方とも取得できれば古い方を使う
                     dates.append(min(added, modified))
                 } else if let added = addedOpt {
                     dates.append(added)
                 } else if let modified = modifiedOpt {
                     dates.append(modified)
                 } else {
-                    // どちらも取れない場合は「今日」を入れる
                     dates.append(Date())
                 }
             } catch {
-                // 例外が出た場合も「今日」を追加
                 dates.append(Date())
             }
         }
 
-        // 収集した日付配列の最小値を返す（なければ今日）
         return dates.min() ?? Date()
     }
 
@@ -267,10 +264,8 @@ struct ContentView: View {
         var resourceValues = URLResourceValues()
         resourceValues.creationDate = date
         resourceValues.contentModificationDate = date
-        // URL は構造体なのでミュータブルなコピーを作る
         var mutableURL = url
         try mutableURL.setResourceValues(resourceValues)
-        // サブフォルダ内のファイル自体は変更しない
     }
 }
 
