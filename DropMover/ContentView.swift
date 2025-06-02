@@ -46,9 +46,12 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // ドロップ領域
+            // ウィンドウ全体をドロップ領域にする
             Color(NSColor.windowBackgroundColor)
                 .ignoresSafeArea()
+                .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers -> Bool in
+                    handleOnDrop(providers: providers)
+                }
 
             VStack {
                 Spacer()
@@ -56,9 +59,6 @@ struct ContentView: View {
                     .font(.system(size: 24, weight: .regular, design: .default))
                     .foregroundColor(Color.gray)
                 Spacer()
-            }
-            .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers -> Bool in
-                handleOnDrop(providers: providers)
             }
         }
         // ダイアログをモーダルで出す
@@ -70,7 +70,7 @@ struct ContentView: View {
         }
         // 処理結果をアラートで表示
         .alert(isPresented: $showResultAlert) {
-            Alert(title: Text("処理結果"),
+            Alert(title: Text("DropMover"),
                   message: Text(resultMessage),
                   dismissButton: .default(Text("OK")) {
                       // OK 押下でダイアログを閉じる
@@ -157,8 +157,9 @@ struct ContentView: View {
         dispatchGroup.notify(queue: .main) {
             if !tempURLs.isEmpty {
                 self.droppedURLs = tempURLs
-                self.defaultDate = computeEarliestDate(from: tempURLs)
-                self.selectedDate = self.defaultDate
+                let calcDate = computeEarliestDate(from: tempURLs)
+                self.defaultDate = calcDate
+                self.selectedDate = calcDate
                 self.showDialog = true
             }
         }
@@ -166,31 +167,39 @@ struct ContentView: View {
         return found
     }
 
-    // MARK: - 追加日 or 作成日 or 更新日 から最古の日時を取得
+    // MARK: - 追加日と変更日のうち古い日時を使って、全ファイルの最古を取得
     private func computeEarliestDate(from urls: [URL]) -> Date {
         var dates: [Date] = []
 
         for url in urls {
             do {
                 let res = try url.resourceValues(
-                    forKeys: [.addedToDirectoryDateKey,
-                              .creationDateKey,
-                              .contentModificationDateKey])
-                if let added = res.addedToDirectoryDate {
+                    forKeys: [.addedToDirectoryDateKey, .contentModificationDateKey])
+                // 追加日だけでなく変更日も取る
+                let addedOpt = res.addedToDirectoryDate
+                let modifiedOpt = res.contentModificationDate
+
+                if let added = addedOpt, let modified = modifiedOpt {
+                    // 両方とも取得できれば古い方を使う
+                    dates.append(min(added, modified))
+                } else if let added = addedOpt {
                     dates.append(added)
-                } else if let created = res.creationDate {
-                    dates.append(created)
-                } else if let modified = res.contentModificationDate {
+                } else if let modified = modifiedOpt {
                     dates.append(modified)
+                } else {
+                    // どちらも取れない場合は「今日」を入れておく
+                    dates.append(Date())
                 }
             } catch {
+                // 例外が出た場合も「今日」を追加
                 dates.append(Date())
             }
         }
 
+        // 収集した日付配列の最小値を返す（無ければ今日）
         return dates.min() ?? Date()
     }
-
+    
     // MARK: - 移動実行
     private func performMoveAction() {
         let fm = FileManager.default
@@ -214,9 +223,6 @@ struct ContentView: View {
             // サブフォルダを作成
             try fm.createDirectory(at: targetURL, withIntermediateDirectories: true)
 
-            // フォルダ本体のタイムスタンプを変更
-            try setTimestamp(on: targetURL, date: selectedDate)
-
             // ファイル移動
             for srcURL in droppedURLs {
                 let destURL = targetURL.appendingPathComponent(srcURL.lastPathComponent)
@@ -227,8 +233,18 @@ struct ContentView: View {
                 }
             }
 
+            // フォルダ本体のタイムスタンプを変更
+            do {
+                try setTimestamp(on: targetURL, date: selectedDate)
+            } catch {
+                moveErrors.append("・フォルダのタイムスタンプ変更に失敗: \(error.localizedDescription)")
+            }
+
             if moveErrors.isEmpty {
-                resultMessage = "すべてのファイルを『\(baseFolderName)』へ移動しました。"
+                resultMessage = """
+                \(baseFolderName)
+                に移動しました。
+                """
             } else {
                 resultMessage = """
                 一部ファイルの移動に失敗しました:

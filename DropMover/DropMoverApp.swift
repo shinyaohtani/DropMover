@@ -7,8 +7,23 @@
 
 import SwiftUI
 
+class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // WindowGroup で最初に作られるウインドウを取得
+        guard let window = NSApp.windows.first else { return }
+
+        // SwiftUI のコンテントビュー（NSHostingView）を取得し、
+        // fileURL タイプのドラッグを受け取るように登録する
+        if let hostingView = window.contentView {
+            hostingView.registerForDraggedTypes([.fileURL])
+        }
+    }
+}
+
+
 @main
 struct DropMoverApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     var body: some Scene {
         WindowGroup {
             ContentView()
