@@ -9,26 +9,29 @@ import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // WindowGroup で最初に作られるウインドウを取得
+        // 最初のウィンドウを取得
         guard let window = NSApp.windows.first else { return }
+        DispatchQueue.main.async {
+            window.setContentSize(NSSize(width: 360, height: 240))
+            window.minSize = NSSize(width: 360, height: 240)
+            window.maxSize = NSSize(width: 360, height: 240)
+            window.styleMask.remove(.resizable)
 
-        // SwiftUI のコンテントビュー（NSHostingView）を取得し、
-        // fileURL タイプのドラッグを受け取るように登録する
-        if let hostingView = window.contentView {
-            hostingView.registerForDraggedTypes([.fileURL])
+            if let hostingView = window.contentView {
+                hostingView.registerForDraggedTypes([.fileURL])
+            }
         }
     }
 }
 
-
 @main
 struct DropMoverApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 722, minHeight: 482)
         }
-        .windowStyle(HiddenTitleBarWindowStyle()) // タイトルバーを隠して Drop 表示だけにする例
+        .windowStyle(HiddenTitleBarWindowStyle())
     }
 }
