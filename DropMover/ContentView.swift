@@ -47,44 +47,54 @@ struct ContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            // ウィンドウ全体をドロップ領域にする
-            Color(NSColor.windowBackgroundColor)
-                .ignoresSafeArea()
-                .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers -> Bool in
-                    handleOnDrop(providers: providers)
-                }
+        GeometryReader { proxy in
+            ZStack {
+                // ① 背景画像をウィンドウいっぱいに表示
+                Image("black-whole")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .ignoresSafeArea()
 
-            VStack {
-                Spacer()
-                Text("Drop files")
-                    .font(.system(size: 24, weight: .regular))
-                    .foregroundColor(Color.gray)
-                Spacer()
+                // ② ウィンドウ全体をドロップ領域にする透明オーバーレイ
+                Color.clear
+                    .contentShape(Rectangle()) // 透明でもドロップ判定が効くように
+                    .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers -> Bool in
+                        handleOnDrop(providers: providers)
+                    }
+
+                // ③ その上に「Drop files」テキストなど必要なUIを重ねる
+                VStack {
+                    Spacer()
+                    Text("Drop files")
+                        .font(.system(size: 24, weight: .regular))
+                        .foregroundColor(Color.gray)
+                        .offset(y: -20)
+                    Spacer()
+                }
             }
-        }
-        // selectedDate が更新され、pendingShowDialog が true のときにダイアログを開く
-        .onChange(of: selectedDate) { newDate in
-            if pendingShowDialog {
-                pendingShowDialog = false
-                showDialog = true
+            // ④ selectedDate が更新され、pendingShowDialog が true のときにダイアログを開く
+            .onChange(of: selectedDate) { newDate in
+                if pendingShowDialog {
+                    pendingShowDialog = false
+                    showDialog = true
+                }
             }
-        }
-        // ダイアログをモーダルで出す
-        .sheet(isPresented: $showDialog, onDismiss: {
-            droppedURLs.removeAll()
-            folderName = ""
-        }) {
-            dialogView
-        }
-        // 処理結果をアラートで表示
-        .alert(isPresented: $showResultAlert) {
-            Alert(title: Text("DropMover"),
-                  message: Text(resultMessage),
-                  dismissButton: .default(Text("OK")))
+            // ⑤ ダイアログをモーダルで出す
+            .sheet(isPresented: $showDialog, onDismiss: {
+                droppedURLs.removeAll()
+                folderName = ""
+            }) {
+                dialogView
+            }
+            // ⑥ 処理結果をアラートで表示
+            .alert(isPresented: $showResultAlert) {
+                Alert(title: Text("DropMover"),
+                      message: Text(resultMessage),
+                      dismissButton: .default(Text("OK")))
+            }
         }
     }
-
     // MARK: - ダイアログ（シート）本体
     private var dialogView: some View {
         VStack(spacing: 16) {
