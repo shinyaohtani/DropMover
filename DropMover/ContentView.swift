@@ -160,7 +160,10 @@ struct ContentView: View {
                 let calcDate = computeEarliestDate(from: tempURLs)
                 self.defaultDate = calcDate
                 self.selectedDate = calcDate
-                self.showDialog = true
+                // selectedDate の反映が完了した後でシートを表示する
+                DispatchQueue.main.async {
+                    self.showDialog = true
+                }
             }
         }
 
@@ -175,7 +178,7 @@ struct ContentView: View {
             do {
                 let res = try url.resourceValues(
                     forKeys: [.addedToDirectoryDateKey, .contentModificationDateKey])
-                // 追加日だけでなく変更日も取る
+                // 追加日と変更日のオプショナルを取得
                 let addedOpt = res.addedToDirectoryDate
                 let modifiedOpt = res.contentModificationDate
 
@@ -187,7 +190,7 @@ struct ContentView: View {
                 } else if let modified = modifiedOpt {
                     dates.append(modified)
                 } else {
-                    // どちらも取れない場合は「今日」を入れておく
+                    // どちらも取れない場合は「今日」を入れる
                     dates.append(Date())
                 }
             } catch {
@@ -196,10 +199,10 @@ struct ContentView: View {
             }
         }
 
-        // 収集した日付配列の最小値を返す（無ければ今日）
+        // 収集した日付配列の最小値を返す（なければ今日）
         return dates.min() ?? Date()
     }
-    
+
     // MARK: - 移動実行
     private func performMoveAction() {
         let fm = FileManager.default
