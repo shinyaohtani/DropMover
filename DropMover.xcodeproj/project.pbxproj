@@ -1,0 +1,546 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		0BD9A8472DED87AC00DC66DE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0BD9A8302DED87AB00DC66DE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0BD9A8372DED87AB00DC66DE;
+			remoteInfo = DropMover;
+		};
+		0BD9A8512DED87AC00DC66DE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0BD9A8302DED87AB00DC66DE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0BD9A8372DED87AB00DC66DE;
+			remoteInfo = DropMover;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0BD9A8382DED87AB00DC66DE /* DropMover.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DropMover.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BD9A8462DED87AC00DC66DE /* DropMoverTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DropMoverTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BD9A8502DED87AC00DC66DE /* DropMoverUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DropMoverUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		0BD9A83A2DED87AB00DC66DE /* DropMover */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DropMover;
+			sourceTree = "<group>";
+		};
+		0BD9A8492DED87AC00DC66DE /* DropMoverTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DropMoverTests;
+			sourceTree = "<group>";
+		};
+		0BD9A8532DED87AC00DC66DE /* DropMoverUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DropMoverUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0BD9A8352DED87AB00DC66DE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0BD9A8432DED87AC00DC66DE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0BD9A84D2DED87AC00DC66DE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0BD9A82F2DED87AB00DC66DE = {
+			isa = PBXGroup;
+			children = (
+				0BD9A83A2DED87AB00DC66DE /* DropMover */,
+				0BD9A8492DED87AC00DC66DE /* DropMoverTests */,
+				0BD9A8532DED87AC00DC66DE /* DropMoverUITests */,
+				0BD9A8392DED87AB00DC66DE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		0BD9A8392DED87AB00DC66DE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0BD9A8382DED87AB00DC66DE /* DropMover.app */,
+				0BD9A8462DED87AC00DC66DE /* DropMoverTests.xctest */,
+				0BD9A8502DED87AC00DC66DE /* DropMoverUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0BD9A8372DED87AB00DC66DE /* DropMover */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0BD9A85A2DED87AC00DC66DE /* Build configuration list for PBXNativeTarget "DropMover" */;
+			buildPhases = (
+				0BD9A8342DED87AB00DC66DE /* Sources */,
+				0BD9A8352DED87AB00DC66DE /* Frameworks */,
+				0BD9A8362DED87AB00DC66DE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0BD9A83A2DED87AB00DC66DE /* DropMover */,
+			);
+			name = DropMover;
+			packageProductDependencies = (
+			);
+			productName = DropMover;
+			productReference = 0BD9A8382DED87AB00DC66DE /* DropMover.app */;
+			productType = "com.apple.product-type.application";
+		};
+		0BD9A8452DED87AC00DC66DE /* DropMoverTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0BD9A85D2DED87AC00DC66DE /* Build configuration list for PBXNativeTarget "DropMoverTests" */;
+			buildPhases = (
+				0BD9A8422DED87AC00DC66DE /* Sources */,
+				0BD9A8432DED87AC00DC66DE /* Frameworks */,
+				0BD9A8442DED87AC00DC66DE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0BD9A8482DED87AC00DC66DE /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0BD9A8492DED87AC00DC66DE /* DropMoverTests */,
+			);
+			name = DropMoverTests;
+			packageProductDependencies = (
+			);
+			productName = DropMoverTests;
+			productReference = 0BD9A8462DED87AC00DC66DE /* DropMoverTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		0BD9A84F2DED87AC00DC66DE /* DropMoverUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0BD9A8602DED87AC00DC66DE /* Build configuration list for PBXNativeTarget "DropMoverUITests" */;
+			buildPhases = (
+				0BD9A84C2DED87AC00DC66DE /* Sources */,
+				0BD9A84D2DED87AC00DC66DE /* Frameworks */,
+				0BD9A84E2DED87AC00DC66DE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0BD9A8522DED87AC00DC66DE /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0BD9A8532DED87AC00DC66DE /* DropMoverUITests */,
+			);
+			name = DropMoverUITests;
+			packageProductDependencies = (
+			);
+			productName = DropMoverUITests;
+			productReference = 0BD9A8502DED87AC00DC66DE /* DropMoverUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0BD9A8302DED87AB00DC66DE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					0BD9A8372DED87AB00DC66DE = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					0BD9A8452DED87AC00DC66DE = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 0BD9A8372DED87AB00DC66DE;
+					};
+					0BD9A84F2DED87AC00DC66DE = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 0BD9A8372DED87AB00DC66DE;
+					};
+				};
+			};
+			buildConfigurationList = 0BD9A8332DED87AB00DC66DE /* Build configuration list for PBXProject "DropMover" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0BD9A82F2DED87AB00DC66DE;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0BD9A8392DED87AB00DC66DE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0BD9A8372DED87AB00DC66DE /* DropMover */,
+				0BD9A8452DED87AC00DC66DE /* DropMoverTests */,
+				0BD9A84F2DED87AC00DC66DE /* DropMoverUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0BD9A8362DED87AB00DC66DE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0BD9A8442DED87AC00DC66DE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0BD9A84E2DED87AC00DC66DE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0BD9A8342DED87AB00DC66DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0BD9A8422DED87AC00DC66DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0BD9A84C2DED87AC00DC66DE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0BD9A8482DED87AC00DC66DE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0BD9A8372DED87AB00DC66DE /* DropMover */;
+			targetProxy = 0BD9A8472DED87AC00DC66DE /* PBXContainerItemProxy */;
+		};
+		0BD9A8522DED87AC00DC66DE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0BD9A8372DED87AB00DC66DE /* DropMover */;
+			targetProxy = 0BD9A8512DED87AC00DC66DE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0BD9A8582DED87AC00DC66DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		0BD9A8592DED87AC00DC66DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		0BD9A85B2DED87AC00DC66DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = DropMover/DropMover.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMover;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		0BD9A85C2DED87AC00DC66DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = DropMover/DropMover.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMover;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		0BD9A85E2DED87AC00DC66DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMoverTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DropMover.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DropMover";
+			};
+			name = Debug;
+		};
+		0BD9A85F2DED87AC00DC66DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMoverTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DropMover.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DropMover";
+			};
+			name = Release;
+		};
+		0BD9A8612DED87AC00DC66DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMoverUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = DropMover;
+			};
+			name = Debug;
+		};
+		0BD9A8622DED87AC00DC66DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMoverUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = DropMover;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0BD9A8332DED87AB00DC66DE /* Build configuration list for PBXProject "DropMover" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0BD9A8582DED87AC00DC66DE /* Debug */,
+				0BD9A8592DED87AC00DC66DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0BD9A85A2DED87AC00DC66DE /* Build configuration list for PBXNativeTarget "DropMover" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0BD9A85B2DED87AC00DC66DE /* Debug */,
+				0BD9A85C2DED87AC00DC66DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0BD9A85D2DED87AC00DC66DE /* Build configuration list for PBXNativeTarget "DropMoverTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0BD9A85E2DED87AC00DC66DE /* Debug */,
+				0BD9A85F2DED87AC00DC66DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0BD9A8602DED87AC00DC66DE /* Build configuration list for PBXNativeTarget "DropMoverUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0BD9A8612DED87AC00DC66DE /* Debug */,
+				0BD9A8622DED87AC00DC66DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 0BD9A8302DED87AB00DC66DE /* Project object */;
+}
