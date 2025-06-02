@@ -1,0 +1,27 @@
+# Xcode
+.DS_Store
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xcworkspace
+*.xcodeproj/project.xcworkspace
+# Swift Package Manager
+.build/
+Packages/
+# SwiftPM generated Xcode project
+*.xcodeproj/project.xcworkspace
+# CocoaPods
+Pods/
+# Carthage
+Carthage/
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+# その他
+*.swp
+*.lock
+.env
