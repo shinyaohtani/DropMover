@@ -311,7 +311,7 @@ struct SheetView: View {
     }
     
     private func resultMessage(baseName: String, errors: [String]) -> String {
-        errors.isEmpty ? "すべてのファイルを『\(baseName)』へ移動しました。" : "一部ファイルの移動に失敗しました:\n" + errors.joined(separator: "\n")
+        errors.isEmpty ? "「\(baseName)」\nに移動しました。" : "一部ファイルの移動に失敗しました:\n" + errors.joined(separator: "\n")
     }
 }
 

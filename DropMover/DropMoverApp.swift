@@ -44,7 +44,7 @@ struct DropMoverApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        WindowGroup {
+        Window("DropMover", id: "main") {
             ContentView()
         }
         .windowStyle(HiddenTitleBarWindowStyle())
