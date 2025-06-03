@@ -184,22 +184,20 @@ struct ContentView: View {
 
 // MARK: - SheetView: シート表示用ビュー
 struct SheetView: View {
+    @Environment(\.dismiss) private var dismiss
+
     // 初期表示用の日付と、ドロップされた URL リスト
     let initialDate: Date
     let droppedURLs: [URL]
     let parentFolderURL: URL
-    // 完了後にメッセージを返すクロージャ
+    // 完了後にメッセージを返すクロージャ（親ビューがアラート表示）
     let onFinish: (String) -> Void
 
-    // シート内で選択された日付とフォルダ名を保持
+    // シート内の入力用ステート
     @State private var selectedDate: Date
     @State private var folderName: String = ""
 
-    // アラート表示用
-    @State private var showResultAlert: Bool = false
-    @State private var resultMessage: String = ""
-
-    // イニシャライザで初期値をセット
+    // イニシャライザ
     init(
         initialDate: Date,
         droppedURLs: [URL],
@@ -213,7 +211,7 @@ struct SheetView: View {
         self._selectedDate = State(initialValue: initialDate)
     }
 
-    // 日付文字列フォーマッタ
+    // 日付フォーマッタ
     private var dateFormatter: DateFormatter {
         let fmt = DateFormatter()
         fmt.calendar = Calendar(identifier: .gregorian)
@@ -224,8 +222,7 @@ struct SheetView: View {
 
     // プレビュー用フォルダ名
     private var previewFolderName: String {
-        let dateStr = dateFormatter.string(from: selectedDate)
-        return "\(dateStr) \(folderName)"
+        "\(dateFormatter.string(from: selectedDate)) \(folderName)"
     }
 
     var body: some View {
@@ -259,13 +256,7 @@ struct SheetView: View {
 
             // ボタン（キャンセル / 移動する）
             HStack {
-                Button("キャンセル") {
-                    // シートを閉じる
-                    NSApp.keyWindow?.firstResponder?.tryToPerform(
-                        #selector(NSWindow.cancelOperation(_:)),
-                        with: nil
-                    )
-                }
+                Button("キャンセル") { dismiss() }
                 Spacer()
                 Button("移動する") {
                     performMoveAction()
@@ -275,20 +266,6 @@ struct SheetView: View {
         }
         .padding(20)
         .frame(width: 400)
-        .alert(isPresented: $showResultAlert) {
-            Alert(
-                title: Text("DropMover"),
-                message: Text(resultMessage),
-                dismissButton: .default(Text("OK")) {
-                    // 移動処理が終わったら、親ビュー(ContentView)にメッセージを渡して閉じる
-                    onFinish(resultMessage)
-                    NSApp.keyWindow?.firstResponder?.tryToPerform(
-                        #selector(NSWindow.cancelOperation(_:)),
-                        with: nil
-                    )
-                }
-            )
-        }
     }
 
     // MARK: - 移動実行の本体
@@ -315,34 +292,37 @@ struct SheetView: View {
             // ファイル移動
             for srcURL in droppedURLs {
                 let destURL = targetURL.appendingPathComponent(srcURL.lastPathComponent)
-                do {
-                    try fm.moveItem(at: srcURL, to: destURL)
-                } catch {
+                do { try fm.moveItem(at: srcURL, to: destURL) }
+                catch {
                     moveErrors.append("・'\(srcURL.lastPathComponent)' の移動に失敗: \(error.localizedDescription)")
                 }
             }
 
             // フォルダ本体のタイムスタンプを変更
             do {
-                var resourceValues = URLResourceValues()
-                resourceValues.creationDate = selectedDate
-                resourceValues.contentModificationDate = selectedDate
-                var mutableURL = targetURL
-                try mutableURL.setResourceValues(resourceValues)
+                var rv = URLResourceValues()
+                rv.creationDate = selectedDate
+                rv.contentModificationDate = selectedDate
+                var mutable = targetURL
+                try mutable.setResourceValues(rv)
             } catch {
                 moveErrors.append("・フォルダのタイムスタンプ変更に失敗: \(error.localizedDescription)")
             }
-
-            if moveErrors.isEmpty {
-                resultMessage = "すべてのファイルを「\(baseFolderName)」へ移動しました。"
-            } else {
-                resultMessage = "一部ファイルの移動に失敗しました:\n" + moveErrors.joined(separator: "\n")
-            }
         } catch {
-            resultMessage = "フォルダ作成／タイムスタンプ変更に失敗: \(error.localizedDescription)"
+            moveErrors.append("・フォルダ作成に失敗: \(error.localizedDescription)")
         }
 
-        showResultAlert = true
+        // 結果メッセージを作成
+        let message: String
+        if moveErrors.isEmpty {
+            message = "すべてのファイルを「\(baseFolderName)」へ移動しました。"
+        } else {
+            message = "一部ファイルの移動に失敗しました:\n" + moveErrors.joined(separator: "\n")
+        }
+
+        // 親ビューに通知してアラート表示 → シートを閉じる
+        onFinish(message)
+        dismiss()
     }
 }
 
