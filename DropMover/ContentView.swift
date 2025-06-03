@@ -104,6 +104,8 @@ struct ContentView: View {
     @State private var dropContext: DropContext?
     @State private var showResultAlert = false
     @State private var resultMessage = ""
+    @State private var blastModel: IconBlastModel? = nil  // アニメ用モデル
+    @State private var lastDropPoint: CGPoint = .zero  // ドロップ位置
 
     private let folderLocator = ParentFolderLocator()
 
@@ -114,6 +116,9 @@ struct ContentView: View {
                 background(for: proxy)
                 dropOverlay
                 promptText
+            }
+            .overlay {
+                IconBlastView(model: $blastModel)
             }
             .overlay(alignment: .bottomTrailing) {
                 openFolderButton
@@ -129,9 +134,13 @@ struct ContentView: View {
                     initialDate: context.defaultDate,
                     droppedURLs: context.urls,
                     parentFolderURL: parentFolder(),
+                    dropPoint: lastDropPoint,
+                    blastModel: $blastModel,
                     onFinish: { message in
-                        resultMessage = message
-                        showResultAlert = true
+                        if !message.isEmpty {
+                            resultMessage = message
+                            showResultAlert = true
+                        }
                     }
                 )
             }
@@ -155,7 +164,11 @@ struct ContentView: View {
 
     // MARK: - Public helpers
 
-    private func handleOnDrop(providers: [NSItemProvider]) -> Bool {
+    private func handleOnDrop(providers: [NSItemProvider], location: CGPoint)
+        -> Bool
+    {
+        lastDropPoint = location
+
         var urls: [URL] = []
         let group = DispatchGroup()
 
@@ -234,11 +247,9 @@ struct ContentView: View {
     private var dropOverlay: some View {
         Color.clear
             .contentShape(Rectangle())
-            .onDrop(
-                of: [UTType.fileURL],
-                isTargeted: nil,
-                perform: handleOnDrop
-            )
+            .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers, point in
+                handleOnDrop(providers: providers, location: point)
+            }
     }
 
     private var promptText: some View {
@@ -262,6 +273,8 @@ struct SheetView: View {
     let droppedURLs: [URL]
     let parentFolderURL: URL
     let onFinish: (String) -> Void
+    let dropPoint: CGPoint
+    @Binding var blastModel: IconBlastModel?
 
     @State private var selectedDate: Date
     @State private var folderName = ""
@@ -270,11 +283,15 @@ struct SheetView: View {
         initialDate: Date,
         droppedURLs: [URL],
         parentFolderURL: URL,
+        dropPoint: CGPoint,
+        blastModel: Binding<IconBlastModel?>,
         onFinish: @escaping (String) -> Void
     ) {
         self.initialDate = initialDate
         self.droppedURLs = droppedURLs
         self.parentFolderURL = parentFolderURL
+        self.dropPoint = dropPoint
+        self._blastModel = blastModel
         self.onFinish = onFinish
         _selectedDate = State(initialValue: initialDate)
     }
@@ -358,9 +375,22 @@ struct SheetView: View {
         var errors: [String] = []
         moveFiles(to: targetURL, errors: &errors)
         LastFolderStore.save(targetURL)
-        let message = resultMessage(baseName: baseName, errors: errors)
-        onFinish(message)
+
+        if !errors.isEmpty {
+            let message = resultMessage(baseName: baseName, errors: errors)
+            dismiss()
+            onFinish(message)
+            return
+        }
+
+        // 移動成功したケース → アニメーションのみ
         dismiss()
+        blastModel = IconBlastModel(
+            icons: droppedURLs.prefix(15).map {
+                NSWorkspace.shared.icon(forFile: $0.path)
+            },
+            dropPoint: dropPoint
+        )
     }
 
     // MARK: - Helpers (private)
