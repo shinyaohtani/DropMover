@@ -8,21 +8,25 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+// ドロップされたファイル一覧と計算済み日付を保持するコンテキスト
+struct DropContext: Identifiable {
+    let id = UUID()
+    let urls: [URL]
+    let defaultDate: Date
+}
+
 struct ContentView: View {
     // MARK: - 画面表示用ステート
-    @State private var droppedURLs: [URL] = []
-    @State private var showDialog: Bool = false
-    @State private var pendingShowDialog: Bool = false
+    // DropContext が非 nil になるとシート表示をトリガー
+    @State private var dropContext: DropContext? = nil
 
-    @State private var selectedDate: Date = Date()
-    @State private var defaultDate: Date = Date()
-    @State private var folderName: String = ""
-
+    // フォルダを移動した後に結果をアラート表示するためのステート
     @State private var showResultAlert: Bool = false
     @State private var resultMessage: String = ""
 
     @AppStorage("parentFolderPath") private var parentFolderPath: String = ""
 
+    // UserDefaults に保存された移動先フォルダのパスを計算して返す
     private var computedParentFolderURL: URL {
         let fm = FileManager.default
         let rawPath = parentFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -45,21 +49,6 @@ struct ContentView: View {
         return defaultURL
     }
 
-    // 日付文字列フォーマッタ
-    private var dateFormatter: DateFormatter {
-        let fmt = DateFormatter()
-        fmt.calendar = Calendar(identifier: .gregorian)
-        fmt.locale = Locale(identifier: "ja_JP")
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt
-    }
-
-    // プレビュー用の生成フォルダ名
-    private var previewFolderName: String {
-        let dateStr = dateFormatter.string(from: selectedDate)
-        return "\(dateStr) \(folderName)"
-    }
-
     var body: some View {
         GeometryReader { proxy in
             ZStack {
@@ -72,7 +61,7 @@ struct ContentView: View {
 
                 // ② ウィンドウ全体をドロップ領域にする透明オーバーレイ
                 Color.clear
-                    .contentShape(Rectangle()) // 透明でもドロップ判定が効くように
+                    .contentShape(Rectangle())
                     .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers -> Bool in
                         handleOnDrop(providers: providers)
                     }
@@ -87,14 +76,24 @@ struct ContentView: View {
                     Spacer()
                 }
             }
-            // ⑤ ダイアログをモーダルで出す
-            .sheet(isPresented: $showDialog, onDismiss: {
-                droppedURLs.removeAll()
-                folderName = ""
-            }) {
-                dialogView
+            // ④ DropContext がセットされたらシートを表示
+            .sheet(item: $dropContext, onDismiss: {
+                // シートを閉じたら dropContext を nil に戻し、フォルダ名などは SheetView 側でリセット
+                dropContext = nil
+            }) { context in
+                // シート初期化時に必ず defaultDate を渡す
+                SheetView(
+                    initialDate: context.defaultDate,
+                    droppedURLs: context.urls,
+                    parentFolderURL: computedParentFolderURL,
+                    onFinish: { message in
+                        // SheetView で移動完了後にメッセージを受け取りアラート表示
+                        resultMessage = message
+                        showResultAlert = true
+                    }
+                )
             }
-            // ⑥ 処理結果をアラートで表示
+            // ⑤ 処理結果をアラートで表示
             .alert(isPresented: $showResultAlert) {
                 Alert(
                     title: Text("DropMover"),
@@ -102,78 +101,18 @@ struct ContentView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
+            // ⑥ Dock / Finder アイコンにファイルをドロップされた場合の通知を受け取る
             .onReceive(NotificationCenter.default.publisher(for: .didReceiveFilesOnIcon)) { notification in
-                            // userInfo から URL 配列を取り出す
-                            guard
-                                let userInfo = notification.userInfo,
-                                let urls = userInfo["urls"] as? [URL]
-                            else { return }
-
-                            // Finder アイコンにドロップされたときの処理は、handleIncomingURLs(urls:) に任せる
-                            handleIncomingURLs(urls)
-                        }
-        }
-    }
-
-    // MARK: - ダイアログ（シート）本体
-    private var dialogView: some View {
-        VStack(spacing: 16) {
-            Text("フォルダを作成してファイルを移動")
-                .font(.headline)
-
-            // 日付入力
-            DatePicker("日付を選択:", selection: $selectedDate, displayedComponents: .date)
-                .datePickerStyle(GraphicalDatePickerStyle())
-                .frame(maxHeight: 250)
-
-            // フォルダ名入力
-            HStack {
-                Text("フォルダ名:")
-                TextField("フォルダ名を入力してください", text: $folderName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            }
-
-            // プレビュー表示
-            HStack {
-                Spacer()
-                Text("生成フォルダ名: ")
-                Text(previewFolderName)
-                    .foregroundColor(folderName.isEmpty ? .gray : .primary)
-                Spacer()
-            }
-            .font(.system(size: 14, weight: .light, design: .monospaced))
-
-            Divider()
-
-            // ボタン（キャンセル / 移動する）
-            HStack {
-                Button(action: {
-                    showDialog = false
-                }) {
-                    Text("キャンセル")
-                }
-                Spacer()
-                Button(action: {
-                    performMoveAction()
-                }) {
-                    Text("移動する")
-                }
-                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty)
+                guard
+                    let userInfo = notification.userInfo,
+                    let urls = userInfo["urls"] as? [URL]
+                else { return }
+                handleIncomingURLs(urls)
             }
         }
-        .padding(20)
-        .frame(width: 400)
     }
 
-    private func handleIncomingURLs(_ urls: [URL]) {
-        // droppedURLs に入れて、デフォルト日付を計算し、ダイアログを開く
-        self.droppedURLs = urls
-        let calcDate = computeEarliestDate(from: urls)
-        self.defaultDate = calcDate
-        self.selectedDate = calcDate
-        self.pendingShowDialog = true
-    }
-    // MARK: - ドロップ処理
+    // MARK: - ドラッグ＆ドロップ（ウィンドウ内）処理
     private func handleOnDrop(providers: [NSItemProvider]) -> Bool {
         var found = false
         let dispatchGroup = DispatchGroup()
@@ -198,18 +137,19 @@ struct ContentView: View {
 
         dispatchGroup.notify(queue: .main) {
             if !tempURLs.isEmpty {
-                self.droppedURLs = tempURLs
                 let calcDate = computeEarliestDate(from: tempURLs)
-                self.defaultDate = calcDate
-                self.selectedDate = calcDate
-            }
-            // ★ここで直接ダイアログを開く★
-            DispatchQueue.main.async {
-                self.showDialog = true
+                // DropContext を作成してシート表示をトリガー
+                dropContext = DropContext(urls: tempURLs, defaultDate: calcDate)
             }
         }
 
         return found
+    }
+
+    // MARK: - Dock / Finder アイコンにドロップされたファイルを受け取る処理
+    private func handleIncomingURLs(_ urls: [URL]) {
+        let calcDate = computeEarliestDate(from: urls)
+        dropContext = DropContext(urls: urls, defaultDate: calcDate)
     }
 
     // MARK: - 追加日と変更日のうち古い日時を使って、全ファイルの最古を取得
@@ -240,22 +180,130 @@ struct ContentView: View {
 
         return dates.min() ?? Date()
     }
+}
 
-    // MARK: - 移動実行
+// MARK: - SheetView: シート表示用ビュー
+struct SheetView: View {
+    // 初期表示用の日付と、ドロップされた URL リスト
+    let initialDate: Date
+    let droppedURLs: [URL]
+    let parentFolderURL: URL
+    // 完了後にメッセージを返すクロージャ
+    let onFinish: (String) -> Void
+
+    // シート内で選択された日付とフォルダ名を保持
+    @State private var selectedDate: Date
+    @State private var folderName: String = ""
+
+    // アラート表示用
+    @State private var showResultAlert: Bool = false
+    @State private var resultMessage: String = ""
+
+    // イニシャライザで初期値をセット
+    init(
+        initialDate: Date,
+        droppedURLs: [URL],
+        parentFolderURL: URL,
+        onFinish: @escaping (String) -> Void
+    ) {
+        self.initialDate = initialDate
+        self.droppedURLs = droppedURLs
+        self.parentFolderURL = parentFolderURL
+        self.onFinish = onFinish
+        self._selectedDate = State(initialValue: initialDate)
+    }
+
+    // 日付文字列フォーマッタ
+    private var dateFormatter: DateFormatter {
+        let fmt = DateFormatter()
+        fmt.calendar = Calendar(identifier: .gregorian)
+        fmt.locale = Locale(identifier: "ja_JP")
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt
+    }
+
+    // プレビュー用フォルダ名
+    private var previewFolderName: String {
+        let dateStr = dateFormatter.string(from: selectedDate)
+        return "\(dateStr) \(folderName)"
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("フォルダを作成してファイルを移動")
+                .font(.headline)
+
+            // 日付入力
+            DatePicker("日付を選択:", selection: $selectedDate, displayedComponents: .date)
+                .datePickerStyle(GraphicalDatePickerStyle())
+                .frame(maxHeight: 250)
+
+            // フォルダ名入力
+            HStack {
+                Text("フォルダ名:")
+                TextField("フォルダ名を入力してください", text: $folderName)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            }
+
+            // プレビュー表示
+            HStack {
+                Spacer()
+                Text("生成フォルダ名: ")
+                Text(previewFolderName)
+                    .foregroundColor(folderName.isEmpty ? .gray : .primary)
+                Spacer()
+            }
+            .font(.system(size: 14, weight: .light, design: .monospaced))
+
+            Divider()
+
+            // ボタン（キャンセル / 移動する）
+            HStack {
+                Button("キャンセル") {
+                    // シートを閉じる
+                    NSApp.keyWindow?.firstResponder?.tryToPerform(
+                        #selector(NSWindow.cancelOperation(_:)),
+                        with: nil
+                    )
+                }
+                Spacer()
+                Button("移動する") {
+                    performMoveAction()
+                }
+                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 400)
+        .alert(isPresented: $showResultAlert) {
+            Alert(
+                title: Text("DropMover"),
+                message: Text(resultMessage),
+                dismissButton: .default(Text("OK")) {
+                    // 移動処理が終わったら、親ビュー(ContentView)にメッセージを渡して閉じる
+                    onFinish(resultMessage)
+                    NSApp.keyWindow?.firstResponder?.tryToPerform(
+                        #selector(NSWindow.cancelOperation(_:)),
+                        with: nil
+                    )
+                }
+            )
+        }
+    }
+
+    // MARK: - 移動実行の本体
     private func performMoveAction() {
         let fm = FileManager.default
         let dateStr = dateFormatter.string(from: selectedDate)
         var baseFolderName = "\(dateStr) \(folderName)"
+        var targetURL = parentFolderURL.appendingPathComponent(baseFolderName)
 
-        let parentURL = computedParentFolderURL
-        var targetURL = parentURL.appendingPathComponent(baseFolderName)
-
-        // 同名フォルダが存在する場合はサフィックスを付与してユニーク化
+        // 同名フォルダが存在する場合はサフィックスを付与
         var suffix = 1
         while fm.fileExists(atPath: targetURL.path) {
             suffix += 1
             baseFolderName = "\(dateStr) \(folderName) (\(suffix))"
-            targetURL = parentURL.appendingPathComponent(baseFolderName)
+            targetURL = parentFolderURL.appendingPathComponent(baseFolderName)
         }
 
         var moveErrors: [String] = []
@@ -276,37 +324,25 @@ struct ContentView: View {
 
             // フォルダ本体のタイムスタンプを変更
             do {
-                try setTimestamp(on: targetURL, date: selectedDate)
+                var resourceValues = URLResourceValues()
+                resourceValues.creationDate = selectedDate
+                resourceValues.contentModificationDate = selectedDate
+                var mutableURL = targetURL
+                try mutableURL.setResourceValues(resourceValues)
             } catch {
                 moveErrors.append("・フォルダのタイムスタンプ変更に失敗: \(error.localizedDescription)")
             }
 
             if moveErrors.isEmpty {
-                resultMessage = """
-                \(baseFolderName)
-                に移動しました。
-                """
+                resultMessage = "すべてのファイルを「\(baseFolderName)」へ移動しました。"
             } else {
-                resultMessage = """
-                一部ファイルの移動に失敗しました:
-                \(moveErrors.joined(separator: "\n"))
-                """
+                resultMessage = "一部ファイルの移動に失敗しました:\n" + moveErrors.joined(separator: "\n")
             }
         } catch {
             resultMessage = "フォルダ作成／タイムスタンプ変更に失敗: \(error.localizedDescription)"
         }
 
         showResultAlert = true
-        showDialog = false
-    }
-
-    // MARK: - フォルダ本体のタイムスタンプを変更
-    private func setTimestamp(on url: URL, date: Date) throws {
-        var resourceValues = URLResourceValues()
-        resourceValues.creationDate = date
-        resourceValues.contentModificationDate = date
-        var mutableURL = url
-        try mutableURL.setResourceValues(resourceValues)
     }
 }
 
