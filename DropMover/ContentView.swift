@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+import AppKit
 
 // MARK: - Model
 
@@ -93,6 +94,10 @@ struct ContentView: View {
                 dropOverlay
                 promptText
             }
+            .overlay(alignment: .bottomTrailing) {
+                openFolderButton
+                    .padding(12)
+            }
             .sheet(item: $dropContext, onDismiss: {
                 dropContext = nil
             }) { context in
@@ -145,6 +150,20 @@ struct ContentView: View {
     private func parentFolder() -> URL { folderLocator.url() }
     
     // MARK: - UI fragments (private)
+    
+    private var openFolderButton: some View {
+        Button {
+            NSWorkspace.shared.open(parentFolder())      // Finder で親フォルダを開く
+        } label: {
+            Image(systemName: "folder")
+                .font(.system(size: 14, weight: .regular))
+                .foregroundColor(.white)
+                .padding(6)
+                .background(.thinMaterial, in: Circle()) // 半透明円形
+        }
+        .buttonStyle(.plain)
+        .help("移動先フォルダを Finder で開く")
+    }
     
     private func background(for proxy: GeometryProxy) -> some View {
         Image("black-whole")
