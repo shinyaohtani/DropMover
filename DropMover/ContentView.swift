@@ -109,6 +109,16 @@ struct ContentView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
+            .onReceive(NotificationCenter.default.publisher(for: .didReceiveFilesOnIcon)) { notification in
+                            // userInfo から URL 配列を取り出す
+                            guard
+                                let userInfo = notification.userInfo,
+                                let urls = userInfo["urls"] as? [URL]
+                            else { return }
+
+                            // Finder アイコンにドロップされたときの処理は、handleIncomingURLs(urls:) に任せる
+                            handleIncomingURLs(urls)
+                        }
         }
     }
 
@@ -162,6 +172,14 @@ struct ContentView: View {
         .frame(width: 400)
     }
 
+    private func handleIncomingURLs(_ urls: [URL]) {
+        // droppedURLs に入れて、デフォルト日付を計算し、ダイアログを開く
+        self.droppedURLs = urls
+        let calcDate = computeEarliestDate(from: urls)
+        self.defaultDate = calcDate
+        self.selectedDate = calcDate
+        self.pendingShowDialog = true
+    }
     // MARK: - ドロップ処理
     private func handleOnDrop(providers: [NSItemProvider]) -> Bool {
         var found = false

@@ -2,19 +2,33 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleIdentifier</key>
-	<string>com.aabce.DropMover</string>
-	<key>CFBundleName</key>
-	<string>DropMover</string>
-	<key>CFBundleDisplayName</key>
-	<string>DropMover</string>
-	<key>CFBundleExecutable</key>
-	<string>DropMover</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>15.5</string>
-	<key>NSFileAccessEnabled</key>
-	<true/>
 	<key>NSDocumentFolderUsageDescription</key>
 	<string>フォルダを作成し、ファイルを移動するためにアクセスが必要です。</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <!-- 任意のラベル名 -->
+            <key>CFBundleTypeName</key>
+            <string>All Documents</string>
+
+            <!-- 公開されている UTI (Uniform Type Identifier) で受け取り可能なタイプを列挙 -->
+            <key>LSItemContentTypes</key>
+            <array>
+                <!-- public.data であらゆるファイルを受け取る -->
+                <string>public.data</string>
+            </array>
+
+            <!-- 「Viewer」にしておくとアイコンにドロップが可能になる -->
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+
+            <!-- 任意ですが、Dock で優先的に受け取りたい場合など -->
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+        </dict>
+    </array>	<key>NSFileAccessEnabled</key>
+	<array>
+		<string></string>
+	</array>
 </dict>
 </plist>

@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+extension Notification.Name {
+    static let didReceiveFilesOnIcon = Notification.Name("didReceiveFilesOnIcon")
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 最初のウィンドウを取得
@@ -25,6 +29,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return true
     }
+    func application(_ application: NSApplication, open urls: [URL]) {
+        // Notification で ContentView に URL リストを投げる
+        NotificationCenter.default.post(
+            name: .didReceiveFilesOnIcon,
+            object: nil,
+            userInfo: ["urls": urls]
+        )
+    }
 }
 
 @main
@@ -36,7 +48,7 @@ struct DropMoverApp: App {
             ContentView()
         }
         .windowStyle(HiddenTitleBarWindowStyle())
-        
+
         Settings {
             SettingsView()
         }
