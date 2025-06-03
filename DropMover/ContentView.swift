@@ -12,35 +12,41 @@ import UniformTypeIdentifiers
 
 enum FileIconProvider {
 
-    /// 128×128 カラーサムネイル（同期版）
     static func coloredIcon(for url: URL, size: CGFloat = 128) -> NSImage {
-        let request = QLThumbnailGenerator.Request(
+        let req = QLThumbnailGenerator.Request(
             fileAt: url,
             size: CGSize(width: size, height: size),
             scale: NSScreen.main?.backingScaleFactor ?? 2.0,
-            representationTypes: .icon
+            representationTypes: .thumbnail
         )
 
         let sema = DispatchSemaphore(value: 0)
-        var image: NSImage?
+        var cg: CGImage? = nil
 
-        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) {
+        QLThumbnailGenerator.shared.generateBestRepresentation(for: req) {
             rep,
             _ in
-            if let cg = rep?.cgImage {
-                image = NSImage(cgImage: cg, size: .zero)
-            }
+            cg = rep?.cgImage
             sema.signal()
         }
-        sema.wait()  // √ 同期で待つ
+        sema.wait()
 
-        if let img = image {
-            return img
-        } else {
-            let fallback = NSWorkspace.shared.icon(forFile: url.path)
-            fallback.isTemplate = false
-            return fallback
+        if let cgImg = cg {
+            let ns = NSImage(cgImage: cgImg, size: .zero)
+            return ns
         }
+
+        let fallback = NSWorkspace.shared.icon(forFile: url.path)
+        if fallback.isTemplate {
+            if let data = fallback.tiffRepresentation,
+                let copy = NSImage(data: data)
+            {
+                copy.isTemplate = false
+                return copy
+            }
+            fallback.isTemplate = false
+        }
+        return fallback
     }
 }
 
