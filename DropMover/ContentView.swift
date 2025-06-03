@@ -164,11 +164,9 @@ struct ContentView: View {
 
     // MARK: - Public helpers
 
-    private func handleOnDrop(providers: [NSItemProvider], location: CGPoint)
+    private func handleOnDrop(providers: [NSItemProvider])
         -> Bool
     {
-        lastDropPoint = location
-
         var urls: [URL] = []
         let group = DispatchGroup()
 
@@ -247,11 +245,18 @@ struct ContentView: View {
     private var dropOverlay: some View {
         Color.clear
             .contentShape(Rectangle())
-            .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers, point in
-                handleOnDrop(providers: providers, location: point)
+            // onDrop 3 引数版：([NSItemProvider], CGPoint) -> Bool
+            .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers, loc in
+                // SwiftUI の loc は左上 (0,0) 基準。
+                // 左下 (0,0) 基準に合わせるため Y だけ反転する
+                lastDropPoint = CGPoint(
+                    x: loc.x,
+                    y: 240 - loc.y
+                )  // 240 = ウインドウ高さ
+                // URL 取り込みなど従来処理
+                return handleOnDrop(providers: providers)
             }
     }
-
     private var promptText: some View {
         VStack {
             Spacer()
@@ -376,21 +381,22 @@ struct SheetView: View {
         moveFiles(to: targetURL, errors: &errors)
         LastFolderStore.save(targetURL)
 
-        if !errors.isEmpty {
-            let message = resultMessage(baseName: baseName, errors: errors)
+        if errors.isEmpty {
             dismiss()
-            onFinish(message)
-            return
+            blastModel = IconBlastModel(
+                icons: droppedURLs.prefix(15).map {
+                    let img = NSWorkspace.shared.icon(forFile: $0.path)
+                    img.isTemplate = false
+                    return img
+                },
+                dropPoint: dropPoint  // そのまま渡す
+            )
+            onFinish("")  // 成功→ダイアログ無し
+        } else {
+            let msg = resultMessage(baseName: baseName, errors: errors)
+            dismiss()
+            onFinish(msg)  // 失敗→ダイアログ表示
         }
-
-        // 移動成功したケース → アニメーションのみ
-        dismiss()
-        blastModel = IconBlastModel(
-            icons: droppedURLs.prefix(15).map {
-                NSWorkspace.shared.icon(forFile: $0.path)
-            },
-            dropPoint: dropPoint
-        )
     }
 
     // MARK: - Helpers (private)
