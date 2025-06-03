@@ -87,13 +87,6 @@ struct ContentView: View {
                     Spacer()
                 }
             }
-            // ④ selectedDate が更新され、pendingShowDialog が true のときにダイアログを開く
-            .onChange(of: selectedDate) { newDate in
-                if pendingShowDialog {
-                    pendingShowDialog = false
-                    showDialog = true
-                }
-            }
             // ⑤ ダイアログをモーダルで出す
             .sheet(isPresented: $showDialog, onDismiss: {
                 droppedURLs.removeAll()
@@ -209,8 +202,10 @@ struct ContentView: View {
                 let calcDate = computeEarliestDate(from: tempURLs)
                 self.defaultDate = calcDate
                 self.selectedDate = calcDate
-                // selectedDate の更新を待ってからダイアログを開くフラグを立てる
-                self.pendingShowDialog = true
+            }
+            // ★ここで直接ダイアログを開く★
+            DispatchQueue.main.async {
+                self.showDialog = true
             }
         }
 
