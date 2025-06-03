@@ -6,8 +6,43 @@
 //
 
 import AppKit
+import QuickLookThumbnailing
 import SwiftUI
 import UniformTypeIdentifiers
+
+enum FileIconProvider {
+
+    /// 128×128 カラーサムネイル（同期版）
+    static func coloredIcon(for url: URL, size: CGFloat = 128) -> NSImage {
+        let request = QLThumbnailGenerator.Request(
+            fileAt: url,
+            size: CGSize(width: size, height: size),
+            scale: NSScreen.main?.backingScaleFactor ?? 2.0,
+            representationTypes: .icon
+        )
+
+        let sema = DispatchSemaphore(value: 0)
+        var image: NSImage?
+
+        QLThumbnailGenerator.shared.generateBestRepresentation(for: request) {
+            rep,
+            _ in
+            if let cg = rep?.cgImage {
+                image = NSImage(cgImage: cg, size: .zero)
+            }
+            sema.signal()
+        }
+        sema.wait()  // √ 同期で待つ
+
+        if let img = image {
+            return img
+        } else {
+            let fallback = NSWorkspace.shared.icon(forFile: url.path)
+            fallback.isTemplate = false
+            return fallback
+        }
+    }
+}
 
 // MARK: - Model
 
@@ -388,9 +423,7 @@ struct SheetView: View {
             dismiss()
             blastModel = IconBlastModel(
                 icons: droppedURLs.prefix(15).map {
-                    let img = NSWorkspace.shared.icon(forFile: $0.path)
-                    img.isTemplate = false
-                    return img
+                    FileIconProvider.coloredIcon(for: $0)
                 },
                 dropPoint: dropPoint  // そのまま渡す
             )
