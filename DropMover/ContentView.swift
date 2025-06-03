@@ -58,6 +58,9 @@ private struct ParentFolderLocator {
 
 private enum LastFolderStore {
     private static let key = "lastCreatedFolderPath"
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: key)
+    }
     static func save(_ url: URL) {
         UserDefaults.standard.set(url.path, forKey: key)
     }
@@ -189,14 +192,26 @@ struct ContentView: View {
     // MARK: - UI fragments (private)
     private var openFolderButton: some View {
         Button {
-            // 変更点: 保存されたフォルダがあれば選択状態で開く
+            let currentParent = parentFolder().standardizedFileURL
+
             if let last = LastFolderStore.load(),
                 FileManager.default.fileExists(atPath: last.path)
             {
-                NSWorkspace.shared.activateFileViewerSelecting([last])
-            } else {
-                NSWorkspace.shared.open(parentFolder())
+
+                let lastParent = last.deletingLastPathComponent()
+                    .standardizedFileURL
+
+                if lastParent == currentParent {
+                    // 親が同じ → 前回フォルダを選択状態で開く
+                    NSWorkspace.shared.activateFileViewerSelecting([last])
+                    return
+                } else {
+                    // 親が異なる → 前回情報を破棄
+                    LastFolderStore.clear()
+                }
             }
+            // 未記録・失効・親が異なる場合は通常表示
+            NSWorkspace.shared.open(currentParent)
         } label: {
             Image(systemName: "folder")
                 .font(.system(size: 14, weight: .regular))
