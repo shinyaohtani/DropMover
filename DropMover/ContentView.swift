@@ -152,11 +152,9 @@ struct ContentView: View {
                     .onDrop(of: [UTType.fileURL], isTargeted: nil) {
                         providers,
                         loc in
-                        // SwiftUI loc は左上(0,0) → 左下へ変換
-                        let drop = CGPoint(x: loc.x, y: 240 - loc.y)
                         return handleOnDrop(
                             providers: providers,
-                            dropPoint: drop
+                            dropPoint: loc
                         )
                     }
 
