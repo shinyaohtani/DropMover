@@ -11,14 +11,15 @@ import UniformTypeIdentifiers
 
 // MARK: - Model
 
-struct DropContext: Identifiable {
+// MARK: - DropContext  (dropPoint を追加し Equatable でシート判定)
+struct DropContext: Identifiable, Equatable {
     let id = UUID()
     let urls: [URL]
     let defaultDate: Date
+    let dropPoint: CGPoint  // ← 追加: 左下原点(0,0)
 }
 
 // MARK: - Helpers
-
 private struct ParentFolderLocator {
     @AppStorage("parentFolderPath") private var parentPath: String = ""
 
@@ -99,56 +100,106 @@ private enum FileDropHelper {
 
 // MARK: - Main View
 
+//
+//  ContentView.swift  (2025-06-xx final)
+//  DropMover
+//
+
+// MARK: - ContentView
 struct ContentView: View {
-    // UI State
-    @State private var dropContext: DropContext?
+
+    // ── UI State ──────────────────────────────────────────
+    @State private var dropContext: DropContext? = nil
     @State private var showResultAlert = false
     @State private var resultMessage = ""
-    @State private var blastModel: IconBlastModel? = nil  // アニメ用モデル
-    @State private var lastDropPoint: CGPoint = .zero  // ドロップ位置
+    @State private var blastModel: IconBlastModel? = nil
 
-    private let folderLocator = ParentFolderLocator()
+    // 親フォルダの計算ロジック（以前と同じ）
+    @AppStorage("parentFolderPath") private var parentFolderPath: String = ""
+    private var parentFolderURL: URL {
+        let fm = FileManager.default
+        let trimmed = parentFolderPath.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        let url: URL =
+            trimmed.isEmpty
+            ? fm.homeDirectoryForCurrentUser.appendingPathComponent(
+                "Documents/DropMover"
+            )
+            : URL(
+                fileURLWithPath: (trimmed as NSString).expandingTildeInPath,
+                isDirectory: true
+            )
+        if !fm.fileExists(atPath: url.path) {
+            try? fm.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+        return url
+    }
 
-    // Body (<25 lines)
+    // ── View body ─────────────────────────────────────────
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                background(for: proxy)
-                dropOverlay
-                promptText
-            }
-            .overlay {
+                // 背景
+                Image("black-whole")
+                    .resizable().scaledToFill()
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .ignoresSafeArea()
+
+                // ドロップ受付オーバーレイ
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onDrop(of: [UTType.fileURL], isTargeted: nil) {
+                        providers,
+                        loc in
+                        // SwiftUI loc は左上(0,0) → 左下へ変換
+                        let drop = CGPoint(x: loc.x, y: 240 - loc.y)
+                        return handleOnDrop(
+                            providers: providers,
+                            dropPoint: drop
+                        )
+                    }
+
+                // 中央テキスト
+                VStack {
+                    Spacer()
+                    Text("Drop files")
+                        .font(.system(size: 24))
+                        .foregroundColor(.gray)
+                        .offset(y: -20)
+                    Spacer()
+                }
+
+                // 吸い込みアニメ
                 IconBlastView(model: $blastModel)
             }
             .overlay(alignment: .bottomTrailing) {
-                openFolderButton
-                    .padding(12)
+                openFolderButton.padding(12)
             }
-            .sheet(
-                item: $dropContext,
-                onDismiss: {
-                    dropContext = nil
-                }
-            ) { context in
+            // --- シート ---
+            .sheet(item: $dropContext, onDismiss: { dropContext = nil }) {
+                ctx in
                 SheetView(
-                    initialDate: context.defaultDate,
-                    droppedURLs: context.urls,
-                    parentFolderURL: parentFolder(),
-                    dropPoint: lastDropPoint,
-                    blastModel: $blastModel,
-                    onFinish: { message in
-                        if !message.isEmpty {
-                            resultMessage = message
-                            showResultAlert = true
-                        }
+                    initialDate: ctx.defaultDate,
+                    droppedURLs: ctx.urls,
+                    parentFolderURL: parentFolderURL,
+                    dropPoint: ctx.dropPoint,
+                    blastModel: $blastModel
+                ) { msg in
+                    // msg が空なら成功 → アラート不要
+                    if !msg.isEmpty {
+                        resultMessage = msg
+                        showResultAlert = true
                     }
-                )
+                }
             }
+            // --- 失敗時のみダイアログ ---
             .alert("DropMover", isPresented: $showResultAlert) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(resultMessage)
             }
+            // Dock / Finder へドロップされたとき
             .onReceive(
                 NotificationCenter.default.publisher(
                     for: .didReceiveFilesOnIcon
@@ -157,115 +208,69 @@ struct ContentView: View {
                 guard let urls = note.userInfo?["urls"] as? [URL] else {
                     return
                 }
-                presentSheet(with: urls)
-            }
-        }
-    }
-
-    // MARK: - Public helpers
-
-    private func handleOnDrop(providers: [NSItemProvider])
-        -> Bool
-    {
-        var urls: [URL] = []
-        let group = DispatchGroup()
-
-        providers.forEach { provider in
-            guard
-                provider.hasItemConformingToTypeIdentifier(
-                    UTType.fileURL.identifier
+                let ctx = DropContext(
+                    urls: urls,
+                    defaultDate: FileDropHelper.earliestDate(in: urls),
+                    dropPoint: CGPoint(x: 180, y: 120)  // 中央に置く（Dock からは位置不明）
                 )
-            else { return }
-            group.enter()
-            provider.loadItem(
-                forTypeIdentifier: UTType.fileURL.identifier,
-                options: nil
-            ) { item, _ in
-                if let url = FileDropHelper.url(from: item) { urls.append(url) }
-                group.leave()
+                dropContext = ctx
             }
         }
-
-        group.notify(queue: .main) { presentSheet(with: urls) }
-        return true
     }
 
-    private func presentSheet(with urls: [URL]) {
-        guard !urls.isEmpty else { return }
-        dropContext = DropContext(
-            urls: urls,
-            defaultDate: FileDropHelper.earliestDate(in: urls)
-        )
-    }
-
-    private func parentFolder() -> URL { folderLocator.url() }
-
-    // MARK: - UI fragments (private)
+    // ── open-folder button ───────────────────────────────
     private var openFolderButton: some View {
         Button {
-            let currentParent = parentFolder().standardizedFileURL
-
+            let currentParent = parentFolderURL.standardizedFileURL
             if let last = LastFolderStore.load(),
-                FileManager.default.fileExists(atPath: last.path)
+                FileManager.default.fileExists(atPath: last.path),
+                last.deletingLastPathComponent().standardizedFileURL
+                    == currentParent
             {
-
-                let lastParent = last.deletingLastPathComponent()
-                    .standardizedFileURL
-
-                if lastParent == currentParent {
-                    // 親が同じ → 前回フォルダを選択状態で開く
-                    NSWorkspace.shared.activateFileViewerSelecting([last])
-                    return
-                } else {
-                    // 親が異なる → 前回情報を破棄
-                    LastFolderStore.clear()
-                }
+                NSWorkspace.shared.activateFileViewerSelecting([last])
+            } else {
+                LastFolderStore.clear()
+                NSWorkspace.shared.open(currentParent)
             }
-            // 未記録・失効・親が異なる場合は通常表示
-            NSWorkspace.shared.open(currentParent)
         } label: {
             Image(systemName: "folder")
-                .font(.system(size: 14, weight: .regular))
+                .font(.system(size: 14))
                 .foregroundColor(.white)
                 .padding(6)
-                .background(.thinMaterial, in: Circle())  // 半透明円形
+                .background(.thinMaterial, in: Circle())
         }
         .buttonStyle(.plain)
         .help("移動先フォルダを Finder で開く")
     }
 
-    private func background(for proxy: GeometryProxy) -> some View {
-        Image("black-whole")
-            .resizable()
-            .scaledToFill()
-            .frame(width: proxy.size.width, height: proxy.size.height)
-            .ignoresSafeArea()
-    }
+    // ── ドロップ処理 ────────────────────────────────────
+    private func handleOnDrop(
+        providers: [NSItemProvider],
+        dropPoint: CGPoint
+    ) -> Bool {
+        var urls: [URL] = []
+        let group = DispatchGroup()
 
-    private var dropOverlay: some View {
-        Color.clear
-            .contentShape(Rectangle())
-            // onDrop 3 引数版：([NSItemProvider], CGPoint) -> Bool
-            .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers, loc in
-                // SwiftUI の loc は左上 (0,0) 基準。
-                // 左下 (0,0) 基準に合わせるため Y だけ反転する
-                lastDropPoint = CGPoint(
-                    x: loc.x,
-                    y: 240 - loc.y
-                )  // 240 = ウインドウ高さ
-                // URL 取り込みなど従来処理
-                return handleOnDrop(providers: providers)
+        for p in providers
+        where p.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+            group.enter()
+            p.loadItem(
+                forTypeIdentifier: UTType.fileURL.identifier,
+                options: nil
+            ) { item, _ in
+                if let u = FileDropHelper.url(from: item) { urls.append(u) }
+                group.leave()
             }
-    }
-    private var promptText: some View {
-        VStack {
-            Spacer()
-            Text("Drop files")
-                .font(.system(size: 24))
-                .foregroundColor(.gray)
-                .offset(y: -20)
-            Spacer()
         }
+        group.notify(queue: .main) {
+            guard !urls.isEmpty else { return }
+            dropContext = DropContext(
+                urls: urls,
+                defaultDate: FileDropHelper.earliestDate(in: urls),
+                dropPoint: dropPoint  // ← 保存
+            )
+        }
+        return true
     }
 }
 

@@ -1,135 +1,150 @@
+//
+//  IconBlastView.swift  – debug logging & correct math
+//
+
 import SwiftUI
 import AppKit
 
-// MARK: - モデル ---------------------------------------------------------------
-struct IconBlastModel {
-    let icons: [NSImage]   // 先頭 15 件
-    let dropPoint: CGPoint // ドロップ座標（左下原点）
+// MARK: - Model passed from SheetView
+public struct IconBlastModel {
+    let icons: [NSImage]     // first ≤15 icons
+    let dropPoint: CGPoint   // drop position, left-bottom origin (0,0)
 }
 
-// MARK: - 角度テーブル（0°=ドロップ方向、反時計回り）
-private let angleTable: [Int: [Double]] = [
-    1: [0],
-    2: [120, 240],
-    4: [300, 30, 120, 210],
-    8: [90, 105, 120, 135, 150, 165, 180, 195],
+// MARK: - Angle table (deg, CCW, 0° = drop direction)
+private let angleTable: [Int:[Double]] = [
+    1 : [0],
+    2 : [120, 240],
+    4 : [300,  30, 120, 210],
+    8 : [ 90, 105, 120, 135, 150, 165, 180, 195]
 ]
 
-// MARK: - メイン View ----------------------------------------------------------
+// MARK: - Main view
 struct IconBlastView: View {
-    @Binding var model: IconBlastModel?
+    @Binding var model: IconBlastModel?          // nil → hidden
+
     private let win = CGSize(width: 360, height: 240)
-    private var center: CGPoint { .init(x: win.width / 2, y: win.height / 2) }
+    private var ctr: CGPoint { .init(x: win.width/2, y: win.height/2) }
+    private let schedule: [(Double,Int)] = [(0,1),(0.05,2),(0.10,4),(0.15,8)]
 
-    /// 発射スケジュール (delay 秒, 枚数)
-    private let schedule: [(Double, Int)] = [(0,1),(0.05,2),(0.10,4),(0.15,8)]
-
+    // ----------------------------------------------------------------------------
     var body: some View {
         ZStack {
-            ForEach(makeItems(), id: \.id) { item in
-                SingleIconView(item: item) {
-                    if item.id == makeItems().last?.id { model = nil }
+            ForEach(makeItems(), id: \.id) { ic in
+                SingleIconView(item: ic) {
+                    if ic.id == makeItems().last?.id { model = nil }
                 }
             }
         }
         .allowsHitTesting(false)
+        // Debug summary once when new model arrives
+        .onChange(of: model?.dropPoint) { _ in dumpSummary() }
     }
 
-    //――― BlastIcon を生成 -----------------------------------------------------
+    // ----------------------------------------------------------------------------
+    /// convert model → BlastIcon list following schedule
     private func makeItems() -> [BlastIcon] {
         guard let m = model else { return [] }
 
-        /// ドロップ方向を基準 0°
-        let dropDir = atan2(
-            Double(m.dropPoint.y - center.y),
-            Double(m.dropPoint.x - center.x)
-        )
+        // drop direction (rad)
+        let dropRad = atan2(Double(m.dropPoint.y - ctr.y),
+                            Double(m.dropPoint.x - ctr.x))
 
-        var out: [BlastIcon] = []
-        var idx = 0
+        var arr: [BlastIcon] = []; var idx = 0
         for (delay, cnt) in schedule {
-            let rels = angleTable[cnt] ?? []
-            for rel in rels where idx < m.icons.count {
-                let absRad = dropDir + rel * .pi / 180
-                let start = edgePoint(angle: absRad)
-                out.append(.init(id: idx,
-                                 delay: delay,
-                                 image: prepared(m.icons[idx]),
-                                 start: start,
-                                 drop: m.dropPoint,
-                                 dirRad: absRad))
+            for rel in angleTable[cnt] ?? [] where idx < m.icons.count {
+                let absRad = dropRad + rel * .pi / 180
+                arr.append(
+                    BlastIcon(
+                        id: idx,
+                        delay: delay,
+                        img: { let i=m.icons[idx]; i.isTemplate=false; return i }(),
+                        start: edgePoint(rad: absRad),
+                        drop: m.dropPoint
+                    )
+                )
                 idx += 1
             }
         }
-        return out
+        arr.forEach { dumpIcon($0, dropRad: dropRad) }   // per-icon log
+        return arr
     }
 
-    /// ウィンドウ矩形と光線 angle が交わる点を返す
-    private func edgePoint(angle rad: Double) -> CGPoint {
+    /// intersect ray(rad) with window rectangle and return edge point
+    private func edgePoint(rad: Double) -> CGPoint {
         let vx = cos(rad), vy = sin(rad)
-        let tx = (vx >= 0 ? win.width - center.x : -center.x) / vx
-        let ty = (vy >= 0 ? win.height - center.y : -center.y) / vy
-        let t  = CGFloat(min(tx, ty))
-        return .init(x: center.x + t * CGFloat(vx),
-                     y: center.y + t * CGFloat(vy))
+        // t when hitting each vertical / horizontal edge
+        let tX = vx >= 0 ? (win.width  - ctr.x) / vx
+                         : (0          - ctr.x) / vx
+        let tY = vy >= 0 ? (win.height - ctr.y) / vy
+                         : (0          - ctr.y) / vy
+        let t  = CGFloat(min(tX, tY))
+        return CGPoint(x: ctr.x + t * CGFloat(vx),
+                       y: ctr.y + t * CGFloat(vy))
     }
 
-    /// NSImage がテンプレートならカラー表示にする
-    private func prepared(_ img: NSImage) -> NSImage {
-        img.isTemplate = false; return img
+    // MARK: - Debug print helpers ----------------------------------------------
+    private func dumpSummary() {
+        guard let m = model else { return }
+        print("🔹 IconBlast summary ────────")
+        let deg = atan2(Double(m.dropPoint.y-ctr.y),
+                        Double(m.dropPoint.x-ctr.x))*180/Double.pi
+        print("window : \(Int(win.width))×\(Int(win.height)), center=(\(Int(ctr.x)),\(Int(ctr.y)))")
+        print("drop   : (\(Int(m.dropPoint.x)),\(Int(m.dropPoint.y)))  dir=\(String(format:"%.1f",deg))°")
+        print("icons  : \(m.icons.count)")
+    }
+    private func dumpIcon(_ ic: BlastIcon, dropRad: Double) {
+        let absDeg = ic.start.angleDeg(from: ctr)
+        print(String(format:"  · id=%02d delay=%.2f  abs=%.1f° start=(%.0f,%.0f)",
+                     ic.id, ic.delay, absDeg, ic.start.x, ic.start.y))
     }
 
-    // 描画用データ
+    // MARK: - Internal data ----------------------------------------------------
     struct BlastIcon: Identifiable {
         let id: Int
         let delay: Double
-        let image: NSImage
+        let img: NSImage
         let start: CGPoint
         let drop: CGPoint
-        let dirRad: Double
     }
 }
 
-// MARK: - 単一アイコン ---------------------------------------------------------
+// MARK: - Single icon view
 private struct SingleIconView: View {
     let item: IconBlastView.BlastIcon
     let finished: () -> Void
-    @State private var t = 0.0           // 0 → 1
+    @State private var t = 0.0                          // 0 → 1
 
-    private let animTime: Double = 2.0
-    private let baseSize: CGFloat = 128  // 128px → 0
+    private let animTime = 2.0                          // 2 s
+    private let baseSize: CGFloat = 128
 
     var body: some View {
-        let center = CGPoint(x: 180, y: 120)
+        let ctr = CGPoint(x: 180, y: 120)
 
-        /// ノーマライズ方向ベクトル
-        let dx = item.drop.x - center.x, dy = item.drop.y - center.y
-        let len = sqrt(dx*dx + dy*dy)
-        let dir = CGVector(dx: dx/len, dy: dy/len)
-
-        /// 右手法線
+        // direction & right-hand vector
+        let v  = CGVector(dx: item.drop.x - ctr.x, dy: item.drop.y - ctr.y)
+        let len = sqrt(v.dx*v.dx + v.dy*v.dy)
+        let dir = CGVector(dx: v.dx/len, dy: v.dy/len)
         let right = CGVector(dx: dir.dy, dy: -dir.dx)
 
-        /// 張り出し点： midpoint + 0.5R * right
-        let mid = CGPoint(x: (item.start.x + center.x)/2,
-                          y: (item.start.y + center.y)/2)
-        let overshoot = CGPoint(
-            x: mid.x + right.dx * len * 0.5,
-            y: mid.y + right.dy * len * 0.5
-        )
+        // overshoot point = midpoint + 0.5·len·right
+        let mid = CGPoint(x: (item.start.x + ctr.x)/2,
+                          y: (item.start.y + ctr.y)/2)
+        let over = CGPoint(x: mid.x + right.dx * len * 0.5,
+                           y: mid.y + right.dy * len * 0.5)
 
-        /// 2 次ベジェ補間
-        func bezier(_ t: CGFloat) -> CGPoint {
-            let u = 1 - t
-            let p0 = item.start, p1 = overshoot, p2 = center
-            let x = u*u*p0.x + 2*u*t*p1.x + t*t*p2.x
-            let y = u*u*p0.y + 2*u*t*p1.y + t*t*p2.y
-            return CGPoint(x: x, y: y)
+        // Quadratic Bézier interpolation
+        func bezier(_ s: CGFloat) -> CGPoint {
+            let u = 1 - s
+            return CGPoint(
+                x: u*u*item.start.x + 2*u*s*over.x + s*s*ctr.x,
+                y: u*u*item.start.y + 2*u*s*over.y + s*s*ctr.y
+            )
         }
 
         let pos = bezier(CGFloat(t))
 
-        return Image(nsImage: item.image)
+        return Image(nsImage: item.img)
             .renderingMode(.original)
             .resizable()
             .frame(width: baseSize, height: baseSize)
@@ -137,11 +152,20 @@ private struct SingleIconView: View {
             .scaleEffect(1 - t)
             .opacity(1 - t)
             .onAppear {
-                withAnimation(.easeIn(duration: animTime)
-                                .delay(item.delay)) { t = 1 }
-                DispatchQueue.main.asyncAfter(
-                    deadline: .now() + item.delay + animTime,
-                    execute: finished)
+                withAnimation(.easeIn(duration: animTime).delay(item.delay)) {
+                    t = 1
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + item.delay + animTime,
+                                              execute: finished)
             }
+    }
+}
+
+// MARK: - CGPoint helper
+private extension CGPoint {
+    /// angle in degree (0 = +X axis) from `origin`
+    func angleDeg(from origin: CGPoint) -> Double {
+        let dx = Double(x - origin.x), dy = Double(y - origin.y)
+        return atan2(dy, dx) * 180 / Double.pi
     }
 }
