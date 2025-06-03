@@ -83,8 +83,8 @@ private struct SingleIconView: View {
 
     @State private var t: Double = 0          // 0 → 1 over 0.2 s
 
-    private let duration = 2.2
-    private let κ = Double.pi * 1.2           // 左巻きカーブ係数
+    private let duration = 0.5
+    private let κ = Double.pi * 1.8           // 左巻きカーブ係数
 
     var body: some View {
         let radius: CGFloat = 180             // ウィンドウ外縁 ~ 任意
@@ -100,7 +100,7 @@ private struct SingleIconView: View {
 
         return Image(nsImage: item.image)
             .resizable()
-            .frame(width: 16, height: 16)
+            .frame(width: 128, height: 128)
             .position(x: x + 180, y: y + 120)             // back to view coords
             .scaleEffect(1 - t)
             .opacity(1 - t)
