@@ -1,333 +1,320 @@
 //
-//  ContentView.swift
+//  DropMoverRefactored.swift
 //  DropMover
 //
-//  Created by 大谷伸弥 on 2025/06/02.
+//  Refactored on 2025/06/03
 //
 
 import SwiftUI
 import UniformTypeIdentifiers
 
-// ドロップされたファイル一覧と計算済み日付を保持するコンテキスト
+// MARK: - Model
+
 struct DropContext: Identifiable {
     let id = UUID()
     let urls: [URL]
     let defaultDate: Date
 }
 
-struct ContentView: View {
-    // MARK: - 画面表示用ステート
-    // DropContext が非 nil になるとシート表示をトリガー
-    @State private var dropContext: DropContext? = nil
+// MARK: - Helpers
 
-    // フォルダを移動した後に結果をアラート表示するためのステート
-    @State private var showResultAlert: Bool = false
-    @State private var resultMessage: String = ""
-
-    @AppStorage("parentFolderPath") private var parentFolderPath: String = ""
-
-    // UserDefaults に保存された移動先フォルダのパスを計算して返す
-    private var computedParentFolderURL: URL {
+private struct ParentFolderLocator {
+    @AppStorage("parentFolderPath") private var parentPath: String = ""
+    
+    // public
+    func url() -> URL {
         let fm = FileManager.default
-        let rawPath = parentFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if !rawPath.isEmpty {
-            let expanded = (rawPath as NSString).expandingTildeInPath
-            let url = URL(fileURLWithPath: expanded, isDirectory: true)
-            if !fm.fileExists(atPath: url.path) {
-                try? fm.createDirectory(at: url, withIntermediateDirectories: true)
-            }
-            return url
+        let cleaned = cleanPath(parentPath)
+        let destination = cleaned.flatMap(expandedPath) ?? defaultURL()
+        ensureDirectory(destination, with: fm)
+        return destination
+    }
+    
+    // MARK: - private
+    
+    private func cleanPath(_ raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+    
+    private func expandedPath(_ raw: String) -> URL {
+        let expanded = (raw as NSString).expandingTildeInPath
+        return URL(fileURLWithPath: expanded, isDirectory: true)
+    }
+    
+    private func ensureDirectory(_ url: URL, with fm: FileManager) {
+        if !fm.fileExists(atPath: url.path) {
+            try? fm.createDirectory(at: url, withIntermediateDirectories: true)
         }
-
-        let defaultURL = fm.homeDirectoryForCurrentUser
+    }
+    
+    private func defaultURL() -> URL {
+        FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Documents")
             .appendingPathComponent("DropMover")
-        if !fm.fileExists(atPath: defaultURL.path) {
-            try? fm.createDirectory(at: defaultURL, withIntermediateDirectories: true)
-        }
-        return defaultURL
     }
+}
 
+private enum FileDropHelper {
+    /// Convert the `item` returned from NSItemProvider to URL if possible
+    static func url(from item: NSSecureCoding?) -> URL? {
+        if let data = item as? Data,
+           let str = String(data: data, encoding: .utf8) {
+            return URL(string: str)
+        }
+        return item as? URL
+    }
+    
+    /// Return the oldest timestamp among added / modified dates of given urls
+    static func earliestDate(in urls: [URL]) -> Date {
+        urls.compactMap { url in
+            (try? url.resourceValues(forKeys: [.addedToDirectoryDateKey, .contentModificationDateKey])).flatMap { v in
+                [v.addedToDirectoryDate, v.contentModificationDate].compactMap { $0 }.min()
+            }
+        }.min() ?? Date()
+    }
+}
+
+// MARK: - Main View
+
+struct ContentView: View {
+    // UI State
+    @State private var dropContext: DropContext?
+    @State private var showResultAlert = false
+    @State private var resultMessage = ""
+    
+    private let folderLocator = ParentFolderLocator()
+    
+    // Body (<25 lines)
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                // ① 背景画像をウィンドウいっぱいに表示
-                Image("black-whole")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .ignoresSafeArea()
-
-                // ② ウィンドウ全体をドロップ領域にする透明オーバーレイ
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onDrop(of: [UTType.fileURL], isTargeted: nil) { providers -> Bool in
-                        handleOnDrop(providers: providers)
-                    }
-
-                // ③ その上に「Drop files」テキストなど必要なUIを重ねる
-                VStack {
-                    Spacer()
-                    Text("Drop files")
-                        .font(.system(size: 24, weight: .regular))
-                        .foregroundColor(Color.gray)
-                        .offset(y: -20)
-                    Spacer()
-                }
+                background(for: proxy)
+                dropOverlay
+                promptText
             }
-            // ④ DropContext がセットされたらシートを表示
             .sheet(item: $dropContext, onDismiss: {
-                // シートを閉じたら dropContext を nil に戻し、フォルダ名などは SheetView 側でリセット
                 dropContext = nil
             }) { context in
-                // シート初期化時に必ず defaultDate を渡す
                 SheetView(
                     initialDate: context.defaultDate,
                     droppedURLs: context.urls,
-                    parentFolderURL: computedParentFolderURL,
+                    parentFolderURL: parentFolder(),
                     onFinish: { message in
-                        // SheetView で移動完了後にメッセージを受け取りアラート表示
                         resultMessage = message
                         showResultAlert = true
                     }
                 )
             }
-            // ⑤ 処理結果をアラートで表示
-            .alert(isPresented: $showResultAlert) {
-                Alert(
-                    title: Text("DropMover"),
-                    message: Text(resultMessage),
-                    dismissButton: .default(Text("OK"))
-                )
+            .alert("DropMover", isPresented: $showResultAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(resultMessage)
             }
-            // ⑥ Dock / Finder アイコンにファイルをドロップされた場合の通知を受け取る
-            .onReceive(NotificationCenter.default.publisher(for: .didReceiveFilesOnIcon)) { notification in
-                guard
-                    let userInfo = notification.userInfo,
-                    let urls = userInfo["urls"] as? [URL]
-                else { return }
-                handleIncomingURLs(urls)
+            .onReceive(NotificationCenter.default.publisher(for: .didReceiveFilesOnIcon)) { note in
+                guard let urls = note.userInfo?["urls"] as? [URL] else { return }
+                presentSheet(with: urls)
             }
         }
     }
-
-    // MARK: - ドラッグ＆ドロップ（ウィンドウ内）処理
+    
+    // MARK: - Public helpers
+    
     private func handleOnDrop(providers: [NSItemProvider]) -> Bool {
-        var found = false
-        let dispatchGroup = DispatchGroup()
-        var tempURLs: [URL] = []
-
-        for provider in providers {
-            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                found = true
-                dispatchGroup.enter()
-                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { (item, _) in
-                    defer { dispatchGroup.leave() }
-                    if let data = item as? Data,
-                       let str = String(data: data, encoding: .utf8),
-                       let url = URL(string: str) {
-                        tempURLs.append(url)
-                    } else if let url = item as? URL {
-                        tempURLs.append(url)
-                    }
-                }
+        var urls: [URL] = []
+        let group = DispatchGroup()
+        
+        providers.forEach { provider in
+            guard provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) else { return }
+            group.enter()
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                if let url = FileDropHelper.url(from: item) { urls.append(url) }
+                group.leave()
             }
         }
-
-        dispatchGroup.notify(queue: .main) {
-            if !tempURLs.isEmpty {
-                let calcDate = computeEarliestDate(from: tempURLs)
-                // DropContext を作成してシート表示をトリガー
-                dropContext = DropContext(urls: tempURLs, defaultDate: calcDate)
-            }
-        }
-
-        return found
+        
+        group.notify(queue: .main) { presentSheet(with: urls) }
+        return true
     }
-
-    // MARK: - Dock / Finder アイコンにドロップされたファイルを受け取る処理
-    private func handleIncomingURLs(_ urls: [URL]) {
-        let calcDate = computeEarliestDate(from: urls)
-        dropContext = DropContext(urls: urls, defaultDate: calcDate)
+    
+    private func presentSheet(with urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        dropContext = DropContext(urls: urls, defaultDate: FileDropHelper.earliestDate(in: urls))
     }
-
-    // MARK: - 追加日と変更日のうち古い日時を使って、全ファイルの最古を取得
-    private func computeEarliestDate(from urls: [URL]) -> Date {
-        var dates: [Date] = []
-
-        for url in urls {
-            do {
-                let res = try url.resourceValues(
-                    forKeys: [.addedToDirectoryDateKey, .contentModificationDateKey]
-                )
-                let addedOpt = res.addedToDirectoryDate
-                let modifiedOpt = res.contentModificationDate
-
-                if let added = addedOpt, let modified = modifiedOpt {
-                    dates.append(min(added, modified))
-                } else if let added = addedOpt {
-                    dates.append(added)
-                } else if let modified = modifiedOpt {
-                    dates.append(modified)
-                } else {
-                    dates.append(Date())
-                }
-            } catch {
-                dates.append(Date())
-            }
+    
+    private func parentFolder() -> URL { folderLocator.url() }
+    
+    // MARK: - UI fragments (private)
+    
+    private func background(for proxy: GeometryProxy) -> some View {
+        Image("black-whole")
+            .resizable()
+            .scaledToFill()
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .ignoresSafeArea()
+    }
+    
+    private var dropOverlay: some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .onDrop(of: [UTType.fileURL], isTargeted: nil, perform: handleOnDrop)
+    }
+    
+    private var promptText: some View {
+        VStack {
+            Spacer()
+            Text("Drop files")
+                .font(.system(size: 24))
+                .foregroundColor(.gray)
+                .offset(y: -20)
+            Spacer()
         }
-
-        return dates.min() ?? Date()
     }
 }
 
-// MARK: - SheetView: シート表示用ビュー
+// MARK: - Sheet View
+
 struct SheetView: View {
     @Environment(\.dismiss) private var dismiss
-
-    // 初期表示用の日付と、ドロップされた URL リスト
+    
     let initialDate: Date
     let droppedURLs: [URL]
     let parentFolderURL: URL
-    // 完了後にメッセージを返すクロージャ（親ビューがアラート表示）
     let onFinish: (String) -> Void
-
-    // シート内の入力用ステート
+    
     @State private var selectedDate: Date
-    @State private var folderName: String = ""
-
-    // イニシャライザ
-    init(
-        initialDate: Date,
-        droppedURLs: [URL],
-        parentFolderURL: URL,
-        onFinish: @escaping (String) -> Void
-    ) {
+    @State private var folderName = ""
+    
+    init(initialDate: Date, droppedURLs: [URL], parentFolderURL: URL, onFinish: @escaping (String) -> Void) {
         self.initialDate = initialDate
         self.droppedURLs = droppedURLs
         self.parentFolderURL = parentFolderURL
         self.onFinish = onFinish
-        self._selectedDate = State(initialValue: initialDate)
+        _selectedDate = State(initialValue: initialDate)
     }
-
-    // 日付フォーマッタ
-    private var dateFormatter: DateFormatter {
-        let fmt = DateFormatter()
-        fmt.calendar = Calendar(identifier: .gregorian)
-        fmt.locale = Locale(identifier: "ja_JP")
-        fmt.dateFormat = "yyyy-MM-dd"
-        return fmt
-    }
-
-    // プレビュー用フォルダ名
+    
+    private let formatter: DateFormatter = {
+        let f = DateFormatter()
+        f.calendar = .init(identifier: .gregorian)
+        f.locale = .init(identifier: "ja_JP")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+    
     private var previewFolderName: String {
-        "\(dateFormatter.string(from: selectedDate)) \(folderName)"
+        "\(formatter.string(from: selectedDate)) \(folderName)"
     }
-
+    
+    // Body (<25 lines)
     var body: some View {
         VStack(spacing: 16) {
-            Text("フォルダを作成してファイルを移動")
-                .font(.headline)
-
-            // 日付入力
-            DatePicker("日付を選択:", selection: $selectedDate, displayedComponents: .date)
-                .datePickerStyle(GraphicalDatePickerStyle())
-                .frame(maxHeight: 250)
-
-            // フォルダ名入力
-            HStack {
-                Text("フォルダ名:")
-                TextField("フォルダ名を入力してください", text: $folderName)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            }
-
-            // プレビュー表示
-            HStack {
-                Spacer()
-                Text("生成フォルダ名: ")
-                Text(previewFolderName)
-                    .foregroundColor(folderName.isEmpty ? .gray : .primary)
-                Spacer()
-            }
-            .font(.system(size: 14, weight: .light, design: .monospaced))
-
+            header
+            datePicker
+            folderInput
+            preview
             Divider()
-
-            // ボタン（キャンセル / 移動する）
-            HStack {
-                Button("キャンセル") { dismiss() }
-                Spacer()
-                Button("移動する") {
-                    performMoveAction()
-                }
-                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
+            actionButtons
         }
         .padding(20)
         .frame(width: 400)
     }
-
-    // MARK: - 移動実行の本体
-    private func performMoveAction() {
-        let fm = FileManager.default
-        let dateStr = dateFormatter.string(from: selectedDate)
-        var baseFolderName = "\(dateStr) \(folderName)"
-        var targetURL = parentFolderURL.appendingPathComponent(baseFolderName)
-
-        // 同名フォルダが存在する場合はサフィックスを付与
-        var suffix = 1
-        while fm.fileExists(atPath: targetURL.path) {
-            suffix += 1
-            baseFolderName = "\(dateStr) \(folderName) (\(suffix))"
-            targetURL = parentFolderURL.appendingPathComponent(baseFolderName)
+    
+    // MARK: - UI fragments
+    
+    private var header: some View {
+        Text("フォルダを作成してファイルを移動").font(.headline)
+    }
+    
+    private var datePicker: some View {
+        DatePicker("日付を選択:", selection: $selectedDate, displayedComponents: .date)
+            .datePickerStyle(.graphical)
+            .frame(maxHeight: 250)
+    }
+    
+    private var folderInput: some View {
+        HStack {
+            Text("フォルダ名:")
+            TextField("フォルダ名を入力してください", text: $folderName)
+                .textFieldStyle(.roundedBorder)
         }
-
-        var moveErrors: [String] = []
-
-        do {
-            // サブフォルダを作成
-            try fm.createDirectory(at: targetURL, withIntermediateDirectories: true)
-
-            // ファイル移動
-            for srcURL in droppedURLs {
-                let destURL = targetURL.appendingPathComponent(srcURL.lastPathComponent)
-                do { try fm.moveItem(at: srcURL, to: destURL) }
-                catch {
-                    moveErrors.append("・'\(srcURL.lastPathComponent)' の移動に失敗: \(error.localizedDescription)")
-                }
-            }
-
-            // フォルダ本体のタイムスタンプを変更
-            do {
-                var rv = URLResourceValues()
-                rv.creationDate = selectedDate
-                rv.contentModificationDate = selectedDate
-                var mutable = targetURL
-                try mutable.setResourceValues(rv)
-            } catch {
-                moveErrors.append("・フォルダのタイムスタンプ変更に失敗: \(error.localizedDescription)")
-            }
-        } catch {
-            moveErrors.append("・フォルダ作成に失敗: \(error.localizedDescription)")
+    }
+    
+    private var preview: some View {
+        HStack {
+            Spacer()
+            Text("生成フォルダ名: ")
+            Text(previewFolderName)
+                .foregroundColor(folderName.isEmpty ? .gray : .primary)
+            Spacer()
         }
-
-        // 結果メッセージを作成
-        let message: String
-        if moveErrors.isEmpty {
-            message = "すべてのファイルを「\(baseFolderName)」へ移動しました。"
-        } else {
-            message = "一部ファイルの移動に失敗しました:\n" + moveErrors.joined(separator: "\n")
+        .font(.system(size: 14, weight: .light, design: .monospaced))
+    }
+    
+    private var actionButtons: some View {
+        HStack {
+            Button("キャンセル") { dismiss() }
+            Spacer()
+            Button("移動する", action: performMove)
+                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty)
         }
-
-        // 親ビューに通知してアラート表示 → シートを閉じる
+    }
+    
+    // MARK: - Move Logic (public)
+    
+    private func performMove() {
+        let (targetURL, baseName) = makeUniqueFolder()
+        var errors: [String] = []
+        moveFiles(to: targetURL, errors: &errors)
+        let message = resultMessage(baseName: baseName, errors: errors)
         onFinish(message)
         dismiss()
+    }
+    
+    // MARK: - Helpers (private)
+    
+    private func makeUniqueFolder() -> (URL, String) {
+        let fm = FileManager.default
+        let dateStr = formatter.string(from: selectedDate)
+        var baseName = "\(dateStr) \(folderName)"
+        var target = parentFolderURL.appendingPathComponent(baseName)
+        var suffix = 1
+        
+        while fm.fileExists(atPath: target.path) {
+            suffix += 1
+            baseName = "\(dateStr) \(folderName) (\(suffix))"
+            target = parentFolderURL.appendingPathComponent(baseName)
+        }
+        try? fm.createDirectory(at: target, withIntermediateDirectories: true)
+        return (target, baseName)
+    }
+    
+    private func moveFiles(to targetURL: URL, errors: inout [String]) {
+        let fm = FileManager.default
+        
+        for src in droppedURLs {
+            let dest = targetURL.appendingPathComponent(src.lastPathComponent)
+            do { try fm.moveItem(at: src, to: dest) }
+            catch {
+                errors.append("・'\(src.lastPathComponent)' の移動に失敗: \(error.localizedDescription)")
+            }
+        }
+        
+        do {
+            var rv = URLResourceValues()
+            rv.creationDate = selectedDate
+            rv.contentModificationDate = selectedDate
+            var mutable = targetURL
+            try mutable.setResourceValues(rv)
+        } catch {
+            errors.append("・フォルダのタイムスタンプ変更に失敗: \(error.localizedDescription)")
+        }
+    }
+    
+    private func resultMessage(baseName: String, errors: [String]) -> String {
+        errors.isEmpty ? "すべてのファイルを『\(baseName)』へ移動しました。" : "一部ファイルの移動に失敗しました:\n" + errors.joined(separator: "\n")
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+    static var previews: some View { ContentView() }
 }
