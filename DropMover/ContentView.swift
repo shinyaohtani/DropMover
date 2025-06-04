@@ -294,12 +294,13 @@ struct ContentView: View {
             }
             .overlay(alignment: .bottomLeading) {       // ← 左下に配置
                 Button {
-                    // ダミー 5 枚でテスト再生
+                    print("play button tapped")
                     let dummy = NSWorkspace.shared.icon(for: .plainText)
                     blastModel = IconBlastModel(
                         icons: Array(repeating: dummy, count: 1),
                         dropPoint: CGPoint(x: 360, y: 120)
                     )
+                    print("play complete")
                 } label: {
                     Image(systemName: "play.fill")
                         .font(.system(size: 14))
