@@ -292,6 +292,25 @@ struct ContentView: View {
                 // 吸い込みアニメ
                 IconBlastView(model: $blastModel)
             }
+            .overlay(alignment: .bottomLeading) {       // ← 左下に配置
+                Button {
+                    // ダミー 5 枚でテスト再生
+                    let dummy = NSWorkspace.shared.icon(for: .plainText)
+                    blastModel = IconBlastModel(
+                        icons: Array(repeating: dummy, count: 1),
+                        dropPoint: CGPoint(x: 360, y: 120)
+                    )
+                } label: {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white)
+                        .padding(6)
+                        .background(.thinMaterial, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .help("アニメーションをテスト再生")
+                .padding(12)
+            }
             .overlay(alignment: .bottomTrailing) {
                 openFolderButton.padding(12)
             }
