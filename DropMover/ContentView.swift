@@ -6,47 +6,127 @@
 //
 
 import AppKit
+import Cocoa
 import QuickLookThumbnailing
 import SwiftUI
 import UniformTypeIdentifiers
 
-enum FileIconProvider {
+/// Finder とほぼ同じ優先度で **128×128 カラー** の書類アイコンを返す
+enum FileIconProviderImproved {
 
-    static func coloredIcon(for url: URL, size: CGFloat = 128) -> NSImage {
+    static func icon(for url: URL, size: CGFloat = 128) -> NSImage {
+
+        //------------------------------------------------------------------//
+        // ❶ NSWorkspace.icon(forFile:)  ─ カスタム or アプリ提供アイコン
+        //------------------------------------------------------------------//
+        print("🔍 NSWorkspace からアイコン取得: \(url.path)")
+        let wsIcon = NSWorkspace.shared.icon(forFile: url.path)
+        if !wsIcon.isTemplate
+            && wsIcon.representations.contains(where: {
+                $0.pixelsWide >= 32
+            })
+        {
+            print("✅ NSWorkspace からアイコン取得")
+            return wsIcon.resized(to: size)
+        } else {
+            print("❌ NSWorkspace からの取得に失敗: \(url.path)")
+        }
+
+        //------------------------------------------------------------------//
+        // ❷ QuickLook (.icon)  → ❸ QuickLook (.thumbnail)
+        //------------------------------------------------------------------//
+        for rep in [
+            QLThumbnailGenerator.Request.RepresentationTypes.icon,
+            .thumbnail,
+        ] {
+            if let qlImg = quickLook(url, rep: rep, edge: size) {
+                print("✅ QuickLook (.icon) からアイコン取得")
+                return qlImg
+            }
+        }
+
+        //------------------------------------------------------------------//
+        // ❹ UTType 由来の書類アイコン
+        //------------------------------------------------------------------//
+        if let ut = UTType(filenameExtension: url.pathExtension) {
+            let img: NSImage
+            if #available(macOS 13, *) {
+                img = NSWorkspace.shared.icon(for: ut)
+            } else {
+                img = NSWorkspace.shared.icon(for: ut)
+            }
+            if !img.isTemplate { return img.resized(to: size) }
+        }
+
+        //------------------------------------------------------------------//
+        // ❺ フォールバック：拡張子文字入りダミー
+        //------------------------------------------------------------------//
+        print("✅ フォールバック：拡張子文字入りダミー")
+        return dummyIcon(ext: url.pathExtension, edge: size)
+    }
+
+    // MARK: - QuickLook 同期ヘルパ
+    private static func quickLook(
+        _ url: URL,
+        rep: QLThumbnailGenerator.Request.RepresentationTypes,
+        edge: CGFloat
+    ) -> NSImage? {
         let req = QLThumbnailGenerator.Request(
             fileAt: url,
-            size: CGSize(width: size, height: size),
-            scale: NSScreen.main?.backingScaleFactor ?? 2.0,
-            representationTypes: .thumbnail
+            size: .init(width: edge, height: edge),
+            scale: 2,
+            representationTypes: rep
         )
-
         let sema = DispatchSemaphore(value: 0)
-        var cg: CGImage? = nil
-
+        var out: NSImage?
         QLThumbnailGenerator.shared.generateBestRepresentation(for: req) {
-            rep,
+            r,
             _ in
-            cg = rep?.cgImage
+            if let cg = r?.cgImage {
+                out = NSImage(cgImage: cg, size: .zero).resized(to: edge)
+            }
             sema.signal()
         }
         sema.wait()
+        return out
+    }
 
-        if let cgImg = cg {
-            let ns = NSImage(cgImage: cgImg, size: .zero)
-            return ns
-        }
+    // MARK: - ダミー生成
+    private static func dummyIcon(ext: String, edge: CGFloat) -> NSImage {
+        let img = NSImage(size: .init(width: edge, height: edge))
+        img.lockFocus()
+        NSColor.windowBackgroundColor.setFill()
+        NSBezierPath(rect: .init(origin: .zero, size: img.size)).fill()
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: edge * 0.32, weight: .medium),
+            .foregroundColor: NSColor.secondaryLabelColor,
+        ]
+        let label = ext.isEmpty ? "?" : ext.uppercased().prefix(4)
+        let ns = NSString(string: String(label))
+        let sz = ns.size(withAttributes: attrs)
+        ns.draw(
+            at: .init(x: (edge - sz.width) / 2, y: (edge - sz.height) / 2),
+            withAttributes: attrs
+        )
+        img.unlockFocus()
+        return img
+    }
+}
 
-        let fallback = NSWorkspace.shared.icon(forFile: url.path)
-        if fallback.isTemplate {
-            if let data = fallback.tiffRepresentation,
-                let copy = NSImage(data: data)
-            {
-                copy.isTemplate = false
-                return copy
-            }
-            fallback.isTemplate = false
-        }
-        return fallback
+// MARK: - NSImage resize helper
+extension NSImage {
+    fileprivate func resized(to edge: CGFloat) -> NSImage {
+        let dst = NSImage(size: .init(width: edge, height: edge))
+        dst.lockFocus()
+        NSGraphicsContext.current?.imageInterpolation = .high
+        draw(
+            in: .init(origin: .zero, size: dst.size),
+            from: .init(origin: .zero, size: size),
+            operation: .sourceOver,
+            fraction: 1
+        )
+        dst.unlockFocus()
+        return dst
     }
 }
 
@@ -420,24 +500,28 @@ struct SheetView: View {
     // MARK: - Move Logic (public)
 
     private func performMove() {
+        // アイコン取得して保持（15 枚まで）
+        let cachedIcons: [NSImage] =
+            droppedURLs.prefix(15).map {
+                FileIconProviderImproved.icon(for: $0)
+            }
+
+        // フォルダ作成・ファイル移動
         let (targetURL, baseName) = makeUniqueFolder()
         var errors: [String] = []
         moveFiles(to: targetURL, errors: &errors)
         LastFolderStore.save(targetURL)
-
         if errors.isEmpty {
             dismiss()
             blastModel = IconBlastModel(
-                icons: droppedURLs.prefix(15).map {
-                    FileIconProvider.coloredIcon(for: $0)
-                },
-                dropPoint: dropPoint  // そのまま渡す
+                icons: cachedIcons,
+                dropPoint: dropPoint
             )
-            onFinish("")  // 成功→ダイアログ無し
+            onFinish("")
         } else {
             let msg = resultMessage(baseName: baseName, errors: errors)
             dismiss()
-            onFinish(msg)  // 失敗→ダイアログ表示
+            onFinish(msg)
         }
     }
 
