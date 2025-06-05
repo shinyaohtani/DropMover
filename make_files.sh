@@ -1,0 +1,15 @@
+touch a-0001.txt
+touch a-0002.csv
+touch a-0003.xcodeproject
+touch a-0004.xlsx
+touch a-0005.pptx
+touch a-0006.pdf
+touch a-0007.png
+touch a-0008.jpg
+touch a-0009.txt
+touch a-0010.txt
+touch a-0011.txt
+touch a-0012.txt
+touch a-0013.txt
+touch a-0014.txt
+touch a-0015.txt

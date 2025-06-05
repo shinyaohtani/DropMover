@@ -294,16 +294,16 @@ struct ContentView: View {
                 // 吸い込みアニメ
                 IconBlastView(model: $blastModel)
             }
+            #if DEBUG
             .overlay(alignment: .bottomLeading) {       // ← 左下に配置
                 Button {
-                    print("play button tapped")
                     let dummy = NSWorkspace.shared.icon(for: .plainText)
                     blastModel = IconBlastModel(
                         icons: Array(repeating: dummy, count: 15),
                         dropPoint: CGPoint(x: 180, y: 136), // 左下が(0,0)
                         isize: iconSize
                     )
-                    print("play complete")
+                    print("Debug Animation triggered")
                 } label: {
                     Image(systemName: "play.fill")
                         .font(.system(size: 14))
@@ -315,6 +315,7 @@ struct ContentView: View {
                 .help("アニメーションをテスト再生")
                 .padding(12)
             }
+            #endif
             .overlay(alignment: .bottomTrailing) {
                 openFolderButton.padding(12)
             }
@@ -499,6 +500,11 @@ struct SheetView: View {
             Text("フォルダ名:")
             TextField("フォルダ名を入力してください", text: $folderName)
                 .textFieldStyle(.roundedBorder)
+                .onSubmit {
+                    if !folderName.trimmingCharacters(in: .whitespaces).isEmpty {
+                        performMove()
+                    }
+                }
         }
     }
 
