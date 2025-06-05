@@ -3,8 +3,8 @@
 //
 
 import AppKit  // macOSのネイティブUIコンポーネントを使用するためのフレームワークをインポート
-import SwiftUI  // SwiftUIフレームワークをインポート（宣言的UIを構築するため）
 import QuartzCore
+import SwiftUI  // SwiftUIフレームワークをインポート（宣言的UIを構築するため）
 
 struct DualAnimatableLogger: AnimatableModifier {
     var t: CGFloat
@@ -20,7 +20,7 @@ struct DualAnimatableLogger: AnimatableModifier {
             print("DualAnimatableLogger: t = \(t), pos = \(pos)")
         }
     }
-    
+
     func body(content: Content) -> some View {
         content
     }
@@ -192,19 +192,19 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
         let dir = CGVector(dx: v.dx / len, dy: v.dy / len)
         let right = CGVector(dx: dir.dy, dy: -dir.dx)
         let mid = CGPoint(
-            x: (item.start.x + ctr.x) / 2,
-            y: (item.start.y + ctr.y) / 2
+            x: (item.start.x + 2 * ctr.x) / 3,
+            y: (item.start.y + 2 * ctr.y) / 3
         )
         // 中間の制御点（over）の計算
         let over = CGPoint(
             x: mid.x + right.dx * len * 0.5,
-            y: mid.y - right.dy * len * 0.5
+            y: mid.y + right.dy * len * 0.5
         )
         // 二次ベジェ曲線を作成
         let path = CGMutablePath()
         path.move(to: item.start)
         path.addQuadCurve(to: ctr, control: over)
-        
+
         return PathAnimationImage(
             image: item.img,
             baseSize: baseSize,
@@ -231,29 +231,29 @@ struct PathAnimationImage: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let container = NSView(frame: .zero)
         container.wantsLayer = true
-        
+
         // イメージレイヤーの作成
         let imageLayer = CALayer()
         imageLayer.contents = image
         imageLayer.contentsGravity = .resizeAspectFill
         imageLayer.bounds = CGRect(x: 0, y: 0, width: baseSize, height: baseSize)
-        imageLayer.position = path.currentPoint // 始点に合わせる
+        imageLayer.position = path.currentPoint  // 始点に合わせる
         container.layer?.addSublayer(imageLayer)
-        
+
         // パスに沿った位置アニメーションの作成
         let positionAnimation = CAKeyframeAnimation(keyPath: "position")
         positionAnimation.path = path
-        
+
         // 進捗に合わせた縮小アニメーション（scale 1 -> 0）
         let scaleAnimation = CABasicAnimation(keyPath: "transform.scale")
         scaleAnimation.fromValue = 1.0
         scaleAnimation.toValue = 0.1
-        
+
         // 進捗に合わせた透過アニメーション（opacity 1 -> 0）
         let opacityAnimation = CABasicAnimation(keyPath: "opacity")
         opacityAnimation.fromValue = 1.0
         opacityAnimation.toValue = 0.5
-        
+
         // これらのアニメーションをグループ化
         let group = CAAnimationGroup()
         group.animations = [positionAnimation, scaleAnimation, opacityAnimation]
@@ -263,22 +263,22 @@ struct PathAnimationImage: NSViewRepresentable {
         group.fillMode = .forwards
         group.isRemovedOnCompletion = false
         group.delegate = context.coordinator
-        
+
         imageLayer.add(group, forKey: "animationGroup")
-        
+
         return container
     }
-    
+
     func updateNSView(_ nsView: NSView, context: Context) {
         // 必要に応じて更新処理を実装
     }
-    
+
     class Coordinator: NSObject, CAAnimationDelegate {
         let finished: () -> Void
         init(finished: @escaping () -> Void) {
             self.finished = finished
         }
-        
+
         func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
             if flag {
                 DispatchQueue.main.async {

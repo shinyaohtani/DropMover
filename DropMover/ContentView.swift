@@ -299,7 +299,7 @@ struct ContentView: View {
                     print("play button tapped")
                     let dummy = NSWorkspace.shared.icon(for: .plainText)
                     blastModel = IconBlastModel(
-                        icons: Array(repeating: dummy, count: 1),
+                        icons: Array(repeating: dummy, count: 2),
                         dropPoint: CGPoint(x: 180, y: 104), // 左上が(0,0)
                         isize: iconSize
                     )
