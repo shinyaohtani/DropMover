@@ -74,10 +74,12 @@ struct IconBlastView: View {  // SwiftUIのViewを定義する構造体
     // --- makeItemsとその他の実装は以前のまま ---
     private func makeItems(from m: IconBlastModel) -> [BlastIcon] {  // IconBlastModelをもとにBlastIcon配列を生成する関数
         let dropRad = atan2(
-            Double(m.dropPoint.y - ctr.y) + 0.2,  // 落下点と中心の差から角度を計算（ラジアン）
+            Double(m.dropPoint.y - ctr.y) + 0.0,  // 落下点と中心の差から角度を計算（ラジアン）
             Double(m.dropPoint.x - ctr.x) + 0.5  // 中心を避けるために0.5ずらす。
         )  // 左上が(0,0) 角度は右が0、右から下を回る右回転
-        print("{\(m.dropPoint.x),\(m.dropPoint.y)} {\(ctr.x),\(ctr.y)} \(dropRad * 180 / .pi) deg")
+        print(
+            "\(m.dropPoint) \(ctr) \(String(format: "%.1f", dropRad * 180 / .pi)) deg"
+        )
         var arr: [BlastIcon] = []  // 結果として返すBlastIconを格納する配列
         var idx = 0  // アイコン画像のインデックスを初期化
         for (delay, cnt) in schedule {  // scheduleの各要素（遅延時間とアイコン個数の組）について処理
@@ -120,10 +122,16 @@ struct IconBlastView: View {  // SwiftUIのViewを定義する構造体
         let tX: CGFloat = distX / abs(CGFloat(vx))  // x方向の交点までの距離を計算
         let tY: CGFloat = distY / abs(CGFloat(vy))  // y方向の交点までの距離を計算
         let t = min(tX, tY)  // x方向とy方向のうち、画面内に入る早い方の距離を使用
-        return CGPoint(
+        let start = CGPoint(
             x: ctr.x + t * CGFloat(vx),  // 中心座標からx方向に伸ばしてエッジ上のx座標を計算
             y: ctr.y + t * CGFloat(vy)  // 中心座標からy方向に伸ばしてエッジ上のy座標を計算
         )
+        // start位置をprintする。
+        print(
+            "edgePoint: \(String(format: "%.1f", rad * 180 / .pi)) deg, start=\(start)"
+        )
+
+        return start
     }
 
     struct BlastIcon: Identifiable {  // 個々のアイコンアニメーション用のデータ構造体（Identifiableプロトコルに準拠）
@@ -154,7 +162,7 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
     private let animTime = 2.0  // アニメーションの実行時間を指定（秒単位）
 
     var body: some View {  // 単一アイコンの表示内容を定義する
-        let v = CGVector(dx: item.drop.x - ctr.x, dy: item.drop.y - ctr.y)  // 中心点から落下位置へのベクトルを計算
+        let v = CGVector(dx: item.start.x - ctr.x, dy: item.start.y - ctr.y)  // 中心点から落下位置へのベクトルを計算
         let len = sqrt(v.dx * v.dx + v.dy * v.dy)  // そのベクトルの長さ（距離）を計算
         let dir = CGVector(dx: v.dx / len, dy: v.dy / len)  // 距離で割って正規化し、方向ベクトルを求める
         let right = CGVector(dx: dir.dy, dy: -dir.dx)  // 落下方向に対して直交する右方向のベクトルを計算
@@ -167,13 +175,15 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
             y: mid.y + right.dy * len * 0.5  // 中間地点から右方向へずらした座標を計算
         )
         func bezier(_ s: CGFloat) -> CGPoint {  // 進捗sに基づいて二次ベジェ曲線上の点を計算する関数
-            let u = 1 - s  // 補数を計算（開始地点の重み）
+            let u = 1 - s  // 補数を計算（開始地点の重み）アニメーションの進捗（u:1.0→0.0）
             return CGPoint(
                 x: u * u * item.start.x + 2 * u * s * over.x + s * s * ctr.x,  // x座標の二次ベジェ補間
                 y: u * u * item.start.y + 2 * u * s * over.y + s * s * ctr.y  // y座標の二次ベジェ補間
             )
         }
         let pos = bezier(CGFloat(t))  // 現在の進捗tから現在のアイコン位置を計算
+        // debug用に現在の位置を出力
+        print("SingleIconView: pos=\(pos) t=\(t) over=\(over) mid=\(mid) right=\(right) dir=\(dir) len=\(len) v=\(v)")
         return Image(nsImage: item.img)  // NSImageからSwiftUIのImageを生成
             .renderingMode(.original)  // 画像を元のカラーで描画するよう指定
             .resizable()  // 画像のサイズ変更を許可
