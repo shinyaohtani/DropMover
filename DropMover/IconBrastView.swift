@@ -187,10 +187,10 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
     private let animTime = 2.0  // アニメーションの実行時間
 
     var body: some View {
-        let v = CGVector(dx: item.start.x - ctr.x, dy: item.start.y - ctr.y)
+        let v: CGVector = CGVector(dx: item.start.x - ctr.x, dy: item.start.y - ctr.y)
         let len = sqrt(v.dx * v.dx + v.dy * v.dy)
         let dir = CGVector(dx: v.dx / len, dy: v.dy / len)
-        let right = CGVector(dx: dir.dy, dy: -dir.dx)
+        let right = CGVector(dx: -dir.dy, dy: dir.dx)
         let mid = CGPoint(
             x: (item.start.x + 2 * ctr.x) / 3,
             y: (item.start.y + 2 * ctr.y) / 3
