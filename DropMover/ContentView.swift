@@ -14,7 +14,7 @@ import UniformTypeIdentifiers
 /// Finder とほぼ同じ優先度で **128×128 カラー** の書類アイコンを返す
 enum FileIconProviderImproved {
 
-    static func icon(for url: URL, size: CGFloat = 128) -> NSImage {
+    static func icon(for url: URL, size: CGFloat) -> NSImage {
 
         //------------------------------------------------------------------//
         // ❶ NSWorkspace.icon(forFile:)  ─ カスタム or アプリ提供アイコン
@@ -234,6 +234,8 @@ struct ContentView: View {
     @State private var showResultAlert = false
     @State private var resultMessage = ""
     @State private var blastModel: IconBlastModel? = nil
+    
+    let iconSize: CGFloat = 128
 
     // 親フォルダの計算ロジック（以前と同じ）
     @AppStorage("parentFolderPath") private var parentFolderPath: String = ""
@@ -298,7 +300,8 @@ struct ContentView: View {
                     let dummy = NSWorkspace.shared.icon(for: .plainText)
                     blastModel = IconBlastModel(
                         icons: Array(repeating: dummy, count: 1),
-                        dropPoint: CGPoint(x: 360, y: 120)
+                        dropPoint: CGPoint(x: 180, y: 104), // 左上が(0,0)
+                        isize: iconSize
                     )
                     print("play complete")
                 } label: {
@@ -323,7 +326,8 @@ struct ContentView: View {
                     droppedURLs: ctx.urls,
                     parentFolderURL: parentFolderURL,
                     dropPoint: ctx.dropPoint,
-                    blastModel: $blastModel
+                    blastModel: $blastModel,
+                    iconSize: iconSize,
                 ) { msg in
                     // msg が空なら成功 → アラート不要
                     if !msg.isEmpty {
@@ -423,6 +427,7 @@ struct SheetView: View {
     let parentFolderURL: URL
     let onFinish: (String) -> Void
     let dropPoint: CGPoint
+    let iconSize: CGFloat
     @Binding var blastModel: IconBlastModel?
 
     @State private var selectedDate: Date
@@ -434,6 +439,7 @@ struct SheetView: View {
         parentFolderURL: URL,
         dropPoint: CGPoint,
         blastModel: Binding<IconBlastModel?>,
+        iconSize: CGFloat,
         onFinish: @escaping (String) -> Void
     ) {
         self.initialDate = initialDate
@@ -441,6 +447,7 @@ struct SheetView: View {
         self.parentFolderURL = parentFolderURL
         self.dropPoint = dropPoint
         self._blastModel = blastModel
+        self.iconSize = iconSize
         self.onFinish = onFinish
         _selectedDate = State(initialValue: initialDate)
     }
@@ -523,7 +530,7 @@ struct SheetView: View {
         // アイコン取得して保持（15 枚まで）
         let cachedIcons: [NSImage] =
             droppedURLs.prefix(15).map {
-                FileIconProviderImproved.icon(for: $0)
+                FileIconProviderImproved.icon(for: $0, size: iconSize)
             }
 
         // フォルダ作成・ファイル移動
@@ -535,7 +542,8 @@ struct SheetView: View {
             dismiss()
             blastModel = IconBlastModel(
                 icons: cachedIcons,
-                dropPoint: dropPoint
+                dropPoint: dropPoint,
+                isize: iconSize
             )
             onFinish("")
         } else {
