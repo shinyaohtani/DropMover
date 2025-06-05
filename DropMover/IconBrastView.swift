@@ -5,6 +5,32 @@
 import AppKit  // macOSのネイティブUIコンポーネントを使用するためのフレームワークをインポート
 import SwiftUI  // SwiftUIフレームワークをインポート（宣言的UIを構築するため）
 
+struct DualAnimatableLogger: AnimatableModifier {
+    var t: CGFloat
+    var pos: CGPoint
+
+    var animatableData: AnimatablePair<CGFloat, AnimatablePair<CGFloat, CGFloat>> {
+        get {
+            AnimatablePair(t, AnimatablePair(pos.x, pos.y))
+        }
+        set {
+            t = newValue.first
+            pos = CGPoint(x: newValue.second.first, y: newValue.second.second)
+            print("DualAnimatableLogger: t = \(t), pos = \(pos)")
+        }
+    }
+    
+    func body(content: Content) -> some View {
+        content
+    }
+}
+
+extension View {
+    func logDualAnimatableData(t: CGFloat, pos: CGPoint) -> some View {
+        self.modifier(DualAnimatableLogger(t: t, pos: pos))
+    }
+}
+
 public struct IconBlastModel: Equatable, Identifiable {  // モデル構造体の定義。等価性と識別性を提供
     public let id = UUID()  // ユニークな識別子を生成（どんな場合もユニーク）
     let icons: [NSImage]  // NSImageの配列。使用するアイコンの画像を保持
@@ -190,7 +216,8 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
             .frame(width: baseSize, height: baseSize)  // 表示サイズをbaseSizeに設定
             .position(pos)  // 計算したposの位置に画像を配置
             .scaleEffect(1 - t)  // 進捗tに応じてアイコンを縮小させる（1から0まで縮小）
-            .opacity(1 - t)  // 進捗tに応じて透過させる（1から0までフェードアウト）
+            //.opacity(1 - t)  // 進捗tに応じて透過させる（1から0までフェードアウト）
+            .logDualAnimatableData(t:t, pos: pos)  // デバッグ用にアニメーションデータをログ出力
             .onAppear {  // アイコンのViewが表示されたときの処理
                 withAnimation(.easeIn(duration: animTime).delay(item.delay)) {  // easeInのアニメーションを指定し、遅延後に実行
                     t = 1  // アニメーションが完了するとtが1になる（最終位置・サイズになる）
