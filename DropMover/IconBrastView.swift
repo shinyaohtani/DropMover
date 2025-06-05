@@ -4,6 +4,7 @@
 
 import AppKit  // macOSのネイティブUIコンポーネントを使用するためのフレームワークをインポート
 import SwiftUI  // SwiftUIフレームワークをインポート（宣言的UIを構築するため）
+import QuartzCore
 
 struct DualAnimatableLogger: AnimatableModifier {
     var t: CGFloat
@@ -183,49 +184,107 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
     let ctr: CGPoint
     let finished: () -> Void  // アニメーション完了時に実行されるクロージャ
 
-    @State private var t = 0.0  // アニメーションの進捗（0.0～1.0）を管理する状態変数
+    private let animTime = 2.0  // アニメーションの実行時間
 
-    private let animTime = 2.0  // アニメーションの実行時間を指定（秒単位）
-
-    var body: some View {  // 単一アイコンの表示内容を定義する
-        let v = CGVector(dx: item.start.x - ctr.x, dy: item.start.y - ctr.y)  // 中心点から落下位置へのベクトルを計算
-        let len = sqrt(v.dx * v.dx + v.dy * v.dy)  // そのベクトルの長さ（距離）を計算
-        let dir = CGVector(dx: v.dx / len, dy: v.dy / len)  // 距離で割って正規化し、方向ベクトルを求める
-        let right = CGVector(dx: dir.dy, dy: -dir.dx)  // 落下方向に対して直交する右方向のベクトルを計算
+    var body: some View {
+        let v = CGVector(dx: item.start.x - ctr.x, dy: item.start.y - ctr.y)
+        let len = sqrt(v.dx * v.dx + v.dy * v.dy)
+        let dir = CGVector(dx: v.dx / len, dy: v.dy / len)
+        let right = CGVector(dx: dir.dy, dy: -dir.dx)
         let mid = CGPoint(
-            x: (item.start.x + ctr.x) / 2,  // 開始位置と中心点のx座標の中間地点を計算
-            y: (item.start.y + ctr.y) / 2  // 開始位置と中心点のy座標の中間地点を計算
+            x: (item.start.x + ctr.x) / 2,
+            y: (item.start.y + ctr.y) / 2
         )
+        // 中間の制御点（over）の計算
         let over = CGPoint(
-            x: mid.x + right.dx * len * 0.5,  // 中間地点から右方向へずらした座標を計算
-            y: mid.y + right.dy * len * 0.5  // 中間地点から右方向へずらした座標を計算
+            x: mid.x + right.dx * len * 0.5,
+            y: mid.y - right.dy * len * 0.5
         )
-        func bezier(_ s: CGFloat) -> CGPoint {  // 進捗sに基づいて二次ベジェ曲線上の点を計算する関数
-            let u = 1 - s  // 補数を計算（開始地点の重み）アニメーションの進捗（u:1.0→0.0）
-            return CGPoint(
-                x: u * u * item.start.x + 2 * u * s * over.x + s * s * ctr.x,  // x座標の二次ベジェ補間
-                y: u * u * item.start.y + 2 * u * s * over.y + s * s * ctr.y  // y座標の二次ベジェ補間
-            )
+        // 二次ベジェ曲線を作成
+        let path = CGMutablePath()
+        path.move(to: item.start)
+        path.addQuadCurve(to: ctr, control: over)
+        
+        return PathAnimationImage(
+            image: item.img,
+            baseSize: baseSize,
+            path: path,
+            duration: animTime,
+            delay: item.delay,
+            finished: finished
+        )
+    }
+}
+
+struct PathAnimationImage: NSViewRepresentable {
+    let image: NSImage
+    let baseSize: CGFloat
+    let path: CGPath
+    let duration: CFTimeInterval
+    let delay: CFTimeInterval
+    let finished: () -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(finished: finished)
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView(frame: .zero)
+        container.wantsLayer = true
+        
+        // イメージレイヤーの作成
+        let imageLayer = CALayer()
+        imageLayer.contents = image
+        imageLayer.contentsGravity = .resizeAspectFill
+        imageLayer.bounds = CGRect(x: 0, y: 0, width: baseSize, height: baseSize)
+        imageLayer.position = path.currentPoint // 始点に合わせる
+        container.layer?.addSublayer(imageLayer)
+        
+        // パスに沿った位置アニメーションの作成
+        let positionAnimation = CAKeyframeAnimation(keyPath: "position")
+        positionAnimation.path = path
+        
+        // 進捗に合わせた縮小アニメーション（scale 1 -> 0）
+        let scaleAnimation = CABasicAnimation(keyPath: "transform.scale")
+        scaleAnimation.fromValue = 1.0
+        scaleAnimation.toValue = 0.1
+        
+        // 進捗に合わせた透過アニメーション（opacity 1 -> 0）
+        let opacityAnimation = CABasicAnimation(keyPath: "opacity")
+        opacityAnimation.fromValue = 1.0
+        opacityAnimation.toValue = 0.5
+        
+        // これらのアニメーションをグループ化
+        let group = CAAnimationGroup()
+        group.animations = [positionAnimation, scaleAnimation, opacityAnimation]
+        group.duration = duration
+        group.beginTime = CACurrentMediaTime() + delay
+        group.timingFunction = CAMediaTimingFunction(name: .easeIn)
+        group.fillMode = .forwards
+        group.isRemovedOnCompletion = false
+        group.delegate = context.coordinator
+        
+        imageLayer.add(group, forKey: "animationGroup")
+        
+        return container
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {
+        // 必要に応じて更新処理を実装
+    }
+    
+    class Coordinator: NSObject, CAAnimationDelegate {
+        let finished: () -> Void
+        init(finished: @escaping () -> Void) {
+            self.finished = finished
         }
-        let pos = bezier(CGFloat(t))  // 現在の進捗tから現在のアイコン位置を計算
-        // debug用に現在の位置を出力
-        print("SingleIconView: pos=\(pos) t=\(t) over=\(over) mid=\(mid) right=\(right) dir=\(dir) len=\(len) v=\(v)")
-        return Image(nsImage: item.img)  // NSImageからSwiftUIのImageを生成
-            .renderingMode(.original)  // 画像を元のカラーで描画するよう指定
-            .resizable()  // 画像のサイズ変更を許可
-            .frame(width: baseSize, height: baseSize)  // 表示サイズをbaseSizeに設定
-            .position(pos)  // 計算したposの位置に画像を配置
-            .scaleEffect(1 - t)  // 進捗tに応じてアイコンを縮小させる（1から0まで縮小）
-            //.opacity(1 - t)  // 進捗tに応じて透過させる（1から0までフェードアウト）
-            .logDualAnimatableData(t:t, pos: pos)  // デバッグ用にアニメーションデータをログ出力
-            .onAppear {  // アイコンのViewが表示されたときの処理
-                withAnimation(.easeIn(duration: animTime).delay(item.delay)) {  // easeInのアニメーションを指定し、遅延後に実行
-                    t = 1  // アニメーションが完了するとtが1になる（最終位置・サイズになる）
+        
+        func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
+            if flag {
+                DispatchQueue.main.async {
+                    self.finished()
                 }
-                DispatchQueue.main.asyncAfter(
-                    deadline: .now() + item.delay + animTime,  // 遅延時間とアニメーション時間を合算した後に
-                    execute: finished  // アニメーション完了時のクロージャを実行して後続処理を行う
-                )
             }
+        }
     }
 }
