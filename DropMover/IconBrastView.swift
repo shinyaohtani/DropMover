@@ -179,11 +179,11 @@ private let angleTable: [Int: [Double]] = [  // アイコン数に応じた配�
 ]
 
 // MARK: - Single icon view
-private struct SingleIconView: View {  // 単一のアイコンを表示するViewの定義
-    let item: IconBlastView.BlastIcon  // 表示するアイコンのデータを受け取る
-    let baseSize: CGFloat  // アイコン画像の基本サイズを指定
+private struct SingleIconView: View {
+    let item: IconBlastView.BlastIcon
+    let baseSize: CGFloat
     let ctr: CGPoint
-    let finished: () -> Void  // アニメーション完了時に実行されるクロージャ
+    let finished: () -> Void
 
     private let animTime = 0.5  // アニメーションの実行時間
 
@@ -212,6 +212,7 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
             path: path,
             duration: animTime,
             delay: item.delay,
+            start: item.start,  // ここで初期位置を渡す
             finished: finished
         )
     }
@@ -223,6 +224,7 @@ struct PathAnimationImage: NSViewRepresentable {
     let path: CGPath
     let duration: CFTimeInterval
     let delay: CFTimeInterval
+    let start: CGPoint  // 新規追加：初期位置
     let finished: () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -238,22 +240,22 @@ struct PathAnimationImage: NSViewRepresentable {
         imageLayer.contents = image
         imageLayer.contentsGravity = .resizeAspectFill
         imageLayer.bounds = CGRect(x: 0, y: 0, width: baseSize, height: baseSize)
-        imageLayer.position = path.currentPoint  // 始点に合わせる
+        imageLayer.position = start  // 始点を明示的に設定
         container.layer?.addSublayer(imageLayer)
-
+        
         // パスに沿った位置アニメーションの作成
         let positionAnimation = CAKeyframeAnimation(keyPath: "position")
         positionAnimation.path = path
 
-        // 進捗に合わせた縮小アニメーション（scale 1 -> 0）
+        // 進捗に合わせた縮小アニメーション（scale 1 -> 0.1）
         let scaleAnimation = CABasicAnimation(keyPath: "transform.scale")
         scaleAnimation.fromValue = 1.0
-        scaleAnimation.toValue = 0.1
+        scaleAnimation.toValue = 0.05
 
-        // 進捗に合わせた透過アニメーション（opacity 1 -> 0）
+        // 進捗に合わせた透過アニメーション（opacity 1 -> 0.1）
         let opacityAnimation = CABasicAnimation(keyPath: "opacity")
         opacityAnimation.fromValue = 1.0
-        opacityAnimation.toValue = 0.1
+        opacityAnimation.toValue = 0.2
 
         // これらのアニメーションをグループ化
         let group = CAAnimationGroup()
@@ -264,25 +266,33 @@ struct PathAnimationImage: NSViewRepresentable {
         group.fillMode = .forwards
         group.isRemovedOnCompletion = false
         group.delegate = context.coordinator
-
+        
         imageLayer.add(group, forKey: "animationGroup")
+        // 修正：Coordinator に imageLayer を伝える
+        context.coordinator.imageLayer = imageLayer
 
         return container
     }
-
+    
     func updateNSView(_ nsView: NSView, context: Context) {
-        // 必要に応じて更新処理を実装
+        // 必要に応じた更新処理
     }
 
     class Coordinator: NSObject, CAAnimationDelegate {
         let finished: () -> Void
+        // imageLayerを弱参照で保持
+        weak var imageLayer: CALayer?
+        
         init(finished: @escaping () -> Void) {
             self.finished = finished
         }
-
+        
         func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
             if flag {
                 DispatchQueue.main.async {
+                    // アニメーション終了時に imageLayer を削除
+                    self.imageLayer?.removeFromSuperlayer()
+                    // その後 finished クロージャで画面側の削除処理を実行
                     self.finished()
                 }
             }
