@@ -50,13 +50,14 @@ struct IconBlastView: View {  // SwiftUIのViewを定義する構造体
 
     private let win = CGSize(width: 360, height: 240)  // 表示領域のサイズを定義
     private var ctr: CGPoint {
-        CGPoint(x: win.width / 2, y: win.height / 2 - 16)  // 左上が(0, 0)、メニューバー???
+        CGPoint(x: win.width / 2, y: win.height / 2 + 16)  // 左下が(0, 0)、メニューバー???
     }  // 表示領域の中心点を計算
+    private static let delayMultiplier: Double = 1.0
     private let schedule: [(Double, Int)] = [  // アニメーションを開始する遅延時間と表示するアイコン数の組み合わせ
-        (0.00 * 11, 1),  // 0秒後に1つのアイコンを表示
-        (0.05 * 11, 2),  // 0.05秒後に2つのアイコンを表示
-        (0.10 * 11, 4),  // 0.10秒後に4つのアイコンを表示
-        (0.15 * 11, 8),  // 0.15秒後に8つのアイコンを表示
+        (0.00 * Self.delayMultiplier, 1),  // 0秒後に1つのアイコンを表示
+        (0.05 * Self.delayMultiplier, 2),  // 0.05秒後に2つのアイコンを表示
+        (0.10 * Self.delayMultiplier, 4),  // 0.10秒後に4つのアイコンを表示
+        (0.15 * Self.delayMultiplier, 8),  // 0.15秒後に8つのアイコンを表示
     ]
 
     var body: some View {  // Viewの本体。画面に表示される内容を定義
@@ -132,16 +133,16 @@ struct IconBlastView: View {  // SwiftUIのViewを定義する構造体
     }
 
     private func edgePoint(rad: Double, isize: CGFloat) -> CGPoint {  // 指定した角度から画面のエッジ上の点を計算する関数
-        // rad は右が0度、下が90度、左が180度、右が270度のラジアン値
-        // ctr は右が+x、下が+yの座標系で、winは画面のサイズ
+        // rad は右が0度、上が90度、左が180度、下が270度のラジアン値
+        // ctr は右が+x、上が+yの座標系で、winは画面のサイズ
         let vx = cos(rad)  // 指定角度のx方向の成分を計算
         let vy = sin(rad)  // 指定角度のy方向の成分を計算
 
         // x方向とy方向のエッジまでの距離を計算
         let distL: CGFloat = ctr.x + isize / 2
         let distR: CGFloat = win.width - ctr.x + isize / 2
-        let distT: CGFloat = ctr.y + isize / 2
-        let distB: CGFloat = win.height - ctr.y + isize / 2
+        let distT: CGFloat = win.height - ctr.y + isize / 2
+        let distB: CGFloat = ctr.y + isize / 2
         let distX: CGFloat = vx >= 0 ? distR : distL
         let distY: CGFloat = vy >= 0 ? distB : distT
 
@@ -184,7 +185,7 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
     let ctr: CGPoint
     let finished: () -> Void  // アニメーション完了時に実行されるクロージャ
 
-    private let animTime = 2.0  // アニメーションの実行時間
+    private let animTime = 0.5  // アニメーションの実行時間
 
     var body: some View {
         let v: CGVector = CGVector(dx: item.start.x - ctr.x, dy: item.start.y - ctr.y)
@@ -197,8 +198,8 @@ private struct SingleIconView: View {  // 単一のアイコンを表示するVi
         )
         // 中間の制御点（over）の計算
         let over = CGPoint(
-            x: mid.x + right.dx * len * 0.5,
-            y: mid.y + right.dy * len * 0.5
+            x: mid.x + right.dx * len * 0.8,
+            y: mid.y + right.dy * len * 0.8
         )
         // 二次ベジェ曲線を作成
         let path = CGMutablePath()
@@ -252,7 +253,7 @@ struct PathAnimationImage: NSViewRepresentable {
         // 進捗に合わせた透過アニメーション（opacity 1 -> 0）
         let opacityAnimation = CABasicAnimation(keyPath: "opacity")
         opacityAnimation.fromValue = 1.0
-        opacityAnimation.toValue = 0.5
+        opacityAnimation.toValue = 0.1
 
         // これらのアニメーションをグループ化
         let group = CAAnimationGroup()

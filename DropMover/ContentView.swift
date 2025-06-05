@@ -299,8 +299,8 @@ struct ContentView: View {
                     print("play button tapped")
                     let dummy = NSWorkspace.shared.icon(for: .plainText)
                     blastModel = IconBlastModel(
-                        icons: Array(repeating: dummy, count: 2),
-                        dropPoint: CGPoint(x: 180, y: 104), // 左上が(0,0)
+                        icons: Array(repeating: dummy, count: 15),
+                        dropPoint: CGPoint(x: 180, y: 136), // 左下が(0,0)
                         isize: iconSize
                     )
                     print("play complete")
