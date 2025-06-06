@@ -13,6 +13,7 @@ extension Notification.Name {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+		NSApplication.shared.servicesProvider = DropMoverService()
         // 最初のウィンドウを取得
         guard let window = NSApp.windows.first else { return }
         DispatchQueue.main.async {

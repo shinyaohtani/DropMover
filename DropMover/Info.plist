@@ -30,5 +30,30 @@
 	<array>
 		<string></string>
 	</array>
-</dict>
+	<key>NSServices</key>
+	<array>
+	  <dict>
+		<key>NSMenuItem</key>
+		<dict>
+		  <key>default</key>
+		  <string>DropMover で移動</string>
+		</dict>
+		<key>NSMessage</key>
+		<string>moveWithDropMover:</string>
+		<key>NSPortName</key>
+		<string>DropMoverService</string>
+		<key>NSSendFileTypes</key>
+		<array>
+		  <string>public.item</string>
+		</array>
+		<key>NSServiceDescription</key>
+		<string>Move the selected file via DropMover</string>
+		<!-- 必要に応じて NSRequiredContext で Finder に限定 -->
+		<key>NSRequiredContext</key>
+		<dict>
+		  <key>NSApplicationIdentifier</key>
+		  <string>com.apple.finder</string>
+		</dict>
+	  </dict>
+	</array></dict>
 </plist>
