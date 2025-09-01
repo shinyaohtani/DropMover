@@ -580,11 +580,11 @@ struct SheetView: View {
         let fm = FileManager.default
         
         for src in droppedURLs {
-            let dest = targetURL.appendingPathComponent(src.lastPathComponent)
-            do { try fm.moveItem(at: src, to: dest) } catch {
-                errors.append(
-                    "・'\(src.lastPathComponent)' の移動に失敗: \(error.localizedDescription)"
-                )
+            let dest = uniqueDestination(for: src.lastPathComponent, in: targetURL)
+            do {
+                try fm.moveItem(at: src, to: dest)
+            } catch {
+                errors.append("・'\(src.lastPathComponent)' の移動に失敗: \(error.localizedDescription)")
             }
         }
         
@@ -597,6 +597,22 @@ struct SheetView: View {
         } catch {
             errors.append("・フォルダのタイムスタンプ変更に失敗: \(error.localizedDescription)")
         }
+    }
+    
+    private func uniqueDestination(for name: String, in dir: URL) -> URL {
+        let fm = FileManager.default
+        var candidate = dir.appendingPathComponent(name)
+        guard fm.fileExists(atPath: candidate.path) else { return candidate }
+        
+        let base = (name as NSString).deletingPathExtension
+        let ext = (name as NSString).pathExtension
+        var i = 2
+        repeat {
+            let newName = ext.isEmpty ? "\(base) (\(i))" : "\(base) (\(i)).\(ext)"
+            candidate = dir.appendingPathComponent(newName)
+            i += 1
+        } while fm.fileExists(atPath: candidate.path)
+        return candidate
     }
     
     private func resultMessage(baseName: String, errors: [String]) -> String {
