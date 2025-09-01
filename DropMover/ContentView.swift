@@ -137,7 +137,8 @@ struct DropContext: Identifiable, Equatable {
     let id = UUID()
     let urls: [URL]
     let defaultDate: Date
-    let dropPoint: CGPoint  // ← 追加: 左下原点(0,0)
+    let dropPoint: CGPoint  // 左下原点(0,0)
+    let suggestedFolderName: String
 }
 
 // MARK: - Helpers
@@ -216,6 +217,19 @@ private enum FileDropHelper {
                 }.min()
             }
         }.min() ?? Date()
+    }
+    
+    static func suggestedFolderName(for urls: [URL]) -> String {
+        let bases = urls.map { $0.deletingPathExtension().lastPathComponent }
+        guard let first = bases.first else { return "" }
+        guard bases.count > 1 else { return first }
+        
+        var prefix = first
+        for s in bases.dropFirst() {
+            prefix = prefix.commonPrefix(with: s) // 大文字小文字はそのまま
+            if prefix.isEmpty { break }
+        }
+        return prefix.isEmpty ? first : prefix
     }
 }
 
@@ -320,8 +334,7 @@ struct ContentView: View {
                 openFolderButton.padding(12)
             }
             // --- シート ---
-            .sheet(item: $dropContext, onDismiss: { dropContext = nil }) {
-                ctx in
+            .sheet(item: $dropContext, onDismiss: { dropContext = nil }) { ctx in
                 SheetView(
                     initialDate: ctx.defaultDate,
                     droppedURLs: ctx.urls,
@@ -329,8 +342,8 @@ struct ContentView: View {
                     dropPoint: ctx.dropPoint,
                     blastModel: $blastModel,
                     iconSize: iconSize,
+                    initialFolderName: ctx.suggestedFolderName
                 ) { msg in
-                    // msg が空なら成功 → アラート不要
                     if !msg.isEmpty {
                         resultMessage = msg
                         showResultAlert = true
@@ -344,18 +357,13 @@ struct ContentView: View {
                 Text(resultMessage)
             }
             // Dock / Finder へドロップされたとき
-            .onReceive(
-                NotificationCenter.default.publisher(
-                    for: .didReceiveFilesOnIcon
-                )
-            ) { note in
-                guard let urls = note.userInfo?["urls"] as? [URL] else {
-                    return
-                }
+            .onReceive(NotificationCenter.default.publisher(for: .didReceiveFilesOnIcon)) { note in
+                guard let urls = note.userInfo?["urls"] as? [URL] else { return }
                 let ctx = DropContext(
                     urls: urls,
                     defaultDate: FileDropHelper.earliestDate(in: urls),
-                    dropPoint: CGPoint(x: 180, y: 120)  // 中央に置く（Dock からは位置不明）
+                    dropPoint: CGPoint(x: 180, y: 120),
+                    suggestedFolderName: FileDropHelper.suggestedFolderName(for: urls)
                 )
                 dropContext = ctx
             }
@@ -392,26 +400,27 @@ struct ContentView: View {
         providers: [NSItemProvider],
         dropPoint: CGPoint
     ) -> Bool {
-        var urls: [URL] = []
+        // ドロップ順を保持
+        var slots: [URL?] = Array(repeating: nil, count: providers.count)
         let group = DispatchGroup()
         
-        for p in providers
+        for (i, p) in providers.enumerated()
         where p.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
             group.enter()
-            p.loadItem(
-                forTypeIdentifier: UTType.fileURL.identifier,
-                options: nil
-            ) { item, _ in
-                if let u = FileDropHelper.url(from: item) { urls.append(u) }
+            p.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                if let u = FileDropHelper.url(from: item) { slots[i] = u }
                 group.leave()
             }
         }
+        
         group.notify(queue: .main) {
+            let urls = slots.compactMap { $0 }
             guard !urls.isEmpty else { return }
             dropContext = DropContext(
                 urls: urls,
                 defaultDate: FileDropHelper.earliestDate(in: urls),
-                dropPoint: dropPoint  // ← 保存
+                dropPoint: dropPoint,
+                suggestedFolderName: FileDropHelper.suggestedFolderName(for: urls)
             )
         }
         return true
@@ -441,6 +450,7 @@ struct SheetView: View {
         dropPoint: CGPoint,
         blastModel: Binding<IconBlastModel?>,
         iconSize: CGFloat,
+        initialFolderName: String,
         onFinish: @escaping (String) -> Void
     ) {
         self.initialDate = initialDate
@@ -451,6 +461,7 @@ struct SheetView: View {
         self.iconSize = iconSize
         self.onFinish = onFinish
         _selectedDate = State(initialValue: initialDate)
+        _folderName   = State(initialValue: initialFolderName)
     }
     
     private let formatter: DateFormatter = {
