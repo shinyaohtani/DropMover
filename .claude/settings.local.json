@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild:*)",
+      "Bash(sw_vers:*)",
+      "Bash(pluginkit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -19,17 +19,13 @@ enum FileIconProviderImproved {
         //------------------------------------------------------------------//
         // ❶ NSWorkspace.icon(forFile:)  ─ カスタム or アプリ提供アイコン
         //------------------------------------------------------------------//
-        print("🔍 NSWorkspace からアイコン取得: \(url.path)")
         let wsIcon = NSWorkspace.shared.icon(forFile: url.path)
         if !wsIcon.isTemplate
             && wsIcon.representations.contains(where: {
                 $0.pixelsWide >= 32
             })
         {
-            print("✅ NSWorkspace からアイコン取得")
             return wsIcon.resized(to: size)
-        } else {
-            print("❌ NSWorkspace からの取得に失敗: \(url.path)")
         }
         
         //------------------------------------------------------------------//
@@ -40,7 +36,6 @@ enum FileIconProviderImproved {
             .thumbnail,
         ] {
             if let qlImg = quickLook(url, rep: rep, edge: size) {
-                print("✅ QuickLook (.icon) からアイコン取得")
                 return qlImg
             }
         }
@@ -61,7 +56,6 @@ enum FileIconProviderImproved {
         //------------------------------------------------------------------//
         // ❺ フォールバック：拡張子文字入りダミー
         //------------------------------------------------------------------//
-        print("✅ フォールバック：拡張子文字入りダミー")
         return dummyIcon(ext: url.pathExtension, edge: size)
     }
     

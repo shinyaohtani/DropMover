@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FEXT00010000000000000001 /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEXT00020000000000000001 /* FinderSync.swift */; };
+		FEXT00060000000000000001 /* DropMoverFinderExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = FEXT00090000000000000001 /* DropMoverFinderExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0BD9A8472DED87AC00DC66DE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +26,37 @@
 			remoteGlobalIDString = 0BD9A8372DED87AB00DC66DE;
 			remoteInfo = DropMover;
 		};
+		FEXT00030000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0BD9A8302DED87AB00DC66DE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FEXT00040000000000000001;
+			remoteInfo = DropMoverFinderExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FEXT00050000000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				FEXT00060000000000000001 /* DropMoverFinderExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0BD9A8382DED87AB00DC66DE /* DropMover.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DropMover.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD9A8462DED87AC00DC66DE /* DropMoverTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DropMoverTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BD9A8502DED87AC00DC66DE /* DropMoverUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DropMoverUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FEXT00020000000000000001 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
+		FEXT00070000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FEXT00080000000000000001 /* DropMoverFinderExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DropMoverFinderExtension.entitlements; sourceTree = "<group>"; };
+		FEXT00090000000000000001 /* DropMoverFinderExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DropMoverFinderExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -82,6 +112,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FEXT000A0000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -89,6 +126,7 @@
 			isa = PBXGroup;
 			children = (
 				0BD9A83A2DED87AB00DC66DE /* DropMover */,
+				FEXT000B0000000000000001 /* DropMoverFinderExtension */,
 				0BD9A8492DED87AC00DC66DE /* DropMoverTests */,
 				0BD9A8532DED87AC00DC66DE /* DropMoverUITests */,
 				0BD9A8392DED87AB00DC66DE /* Products */,
@@ -101,8 +139,19 @@
 				0BD9A8382DED87AB00DC66DE /* DropMover.app */,
 				0BD9A8462DED87AC00DC66DE /* DropMoverTests.xctest */,
 				0BD9A8502DED87AC00DC66DE /* DropMoverUITests.xctest */,
+				FEXT00090000000000000001 /* DropMoverFinderExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FEXT000B0000000000000001 /* DropMoverFinderExtension */ = {
+			isa = PBXGroup;
+			children = (
+				FEXT00020000000000000001 /* FinderSync.swift */,
+				FEXT00070000000000000001 /* Info.plist */,
+				FEXT00080000000000000001 /* DropMoverFinderExtension.entitlements */,
+			);
+			path = DropMoverFinderExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -115,10 +164,12 @@
 				0BD9A8342DED87AB00DC66DE /* Sources */,
 				0BD9A8352DED87AB00DC66DE /* Frameworks */,
 				0BD9A8362DED87AB00DC66DE /* Resources */,
+				FEXT00050000000000000001 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				FEXT000C0000000000000001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0BD9A83A2DED87AB00DC66DE /* DropMover */,
@@ -176,6 +227,25 @@
 			productReference = 0BD9A8502DED87AC00DC66DE /* DropMoverUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		FEXT00040000000000000001 /* DropMoverFinderExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FEXT000D0000000000000001 /* Build configuration list for PBXNativeTarget "DropMoverFinderExtension" */;
+			buildPhases = (
+				FEXT000E0000000000000001 /* Sources */,
+				FEXT000A0000000000000001 /* Frameworks */,
+				FEXT000F0000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DropMoverFinderExtension;
+			packageProductDependencies = (
+			);
+			productName = DropMoverFinderExtension;
+			productReference = FEXT00090000000000000001 /* DropMoverFinderExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +267,9 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 0BD9A8372DED87AB00DC66DE;
 					};
+					FEXT00040000000000000001 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = 0BD9A8332DED87AB00DC66DE /* Build configuration list for PBXProject "DropMover" */;
@@ -214,6 +287,7 @@
 			projectRoot = "";
 			targets = (
 				0BD9A8372DED87AB00DC66DE /* DropMover */,
+				FEXT00040000000000000001 /* DropMoverFinderExtension */,
 				0BD9A8452DED87AC00DC66DE /* DropMoverTests */,
 				0BD9A84F2DED87AC00DC66DE /* DropMoverUITests */,
 			);
@@ -236,6 +310,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0BD9A84E2DED87AC00DC66DE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FEXT000F0000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -266,6 +347,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FEXT000E0000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FEXT00010000000000000001 /* FinderSync.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -278,6 +367,11 @@
 			isa = PBXTargetDependency;
 			target = 0BD9A8372DED87AB00DC66DE /* DropMover */;
 			targetProxy = 0BD9A8512DED87AC00DC66DE /* PBXContainerItemProxy */;
+		};
+		FEXT000C0000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FEXT00040000000000000001 /* DropMoverFinderExtension */;
+			targetProxy = FEXT00030000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -524,6 +618,58 @@
 			};
 			name = Release;
 		};
+		FEXT00100000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DropMoverFinderExtension/DropMoverFinderExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNKEK75AK4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DropMoverFinderExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "DropMover Finder Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "(C) Shinya Ohtani";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMover.FinderExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FEXT00110000000000000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DropMoverFinderExtension/DropMoverFinderExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = PNKEK75AK4;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DropMoverFinderExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "DropMover Finder Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "(C) Shinya Ohtani";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aabce.DropMover.FinderExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -559,6 +705,15 @@
 			buildConfigurations = (
 				0BD9A8612DED87AC00DC66DE /* Debug */,
 				0BD9A8622DED87AC00DC66DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FEXT000D0000000000000001 /* Build configuration list for PBXNativeTarget "DropMoverFinderExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FEXT00100000000000000001 /* Debug */,
+				FEXT00110000000000000001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

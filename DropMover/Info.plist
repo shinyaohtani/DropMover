@@ -4,6 +4,17 @@
 <dict>
 	<key>NSDocumentFolderUsageDescription</key>
 	<string>フォルダを作成し、ファイルを移動するためにアクセスが必要です。</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.aabce.DropMover</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>dropmover</string>
+			</array>
+		</dict>
+	</array>
     <key>CFBundleDocumentTypes</key>
     <array>
         <dict>
