@@ -11,6 +11,65 @@ extension Notification.Name {
     static let didReceiveFilesOnIcon = Notification.Name("didReceiveFilesOnIcon")
 }
 
+// MARK: - Finder Extension Status Checker
+
+enum FinderExtensionStatus {
+    case enabled
+    case disabled
+    case notFound
+}
+
+enum FinderExtensionChecker {
+    private static let extensionBundleID = "com.aabce.DropMover.FinderExtension"
+
+    /// Finder拡張機能の有効/無効状態を確認
+    static func checkStatus() -> FinderExtensionStatus {
+        let process = Process()
+        let pipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+        process.arguments = ["-m", "-p", "com.apple.FinderSync"]
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        do {
+            try process.run()
+            process.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let output = String(data: data, encoding: .utf8) else {
+                return .notFound
+            }
+
+            // 出力から該当の拡張機能を探す
+            // 形式: "+    com.aabce.DropMover.FinderExtension(1.0)" (有効)
+            //       "-    com.aabce.DropMover.FinderExtension(1.0)" (無効)
+            //       "     com.aabce.DropMover.FinderExtension(1.0)" (未設定)
+            for line in output.components(separatedBy: "\n") {
+                if line.contains(extensionBundleID) {
+                    if line.hasPrefix("+") {
+                        return .enabled
+                    } else {
+                        return .disabled
+                    }
+                }
+            }
+
+            return .notFound
+        } catch {
+            return .notFound
+        }
+    }
+
+    /// システム設定の機能拡張画面を開く
+    static func openExtensionSettings() {
+        // macOS 13以降の設定アプリURL
+        if let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 最初のウィンドウを取得

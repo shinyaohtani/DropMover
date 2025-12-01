@@ -236,13 +236,15 @@ private enum FileDropHelper {
 
 // MARK: - ContentView
 struct ContentView: View {
-    
+
     // ── UI State ──────────────────────────────────────────
     @State private var dropContext: DropContext? = nil
     @State private var showResultAlert = false
     @State private var resultMessage = ""
     @State private var blastModel: IconBlastModel? = nil
-    
+    @State private var showExtensionAlert = false
+    @State private var extensionStatus: FinderExtensionStatus = .enabled
+
     let iconSize: CGFloat = 128
     
     // 親フォルダの計算ロジック（以前と同じ）
@@ -360,6 +362,32 @@ struct ContentView: View {
                     suggestedFolderName: FileDropHelper.suggestedFolderName(for: urls)
                 )
                 dropContext = ctx
+            }
+            // 起動時にFinder拡張機能の状態をチェック
+            .onAppear {
+                checkFinderExtensionStatus()
+            }
+            // Finder拡張機能の案内アラート
+            .alert("Finder拡張機能が無効です", isPresented: $showExtensionAlert) {
+                Button("設定を開く") {
+                    FinderExtensionChecker.openExtensionSettings()
+                }
+                Button("後で", role: .cancel) {}
+            } message: {
+                Text("Finderの右クリックメニューから「DropMoverで移動...」を使用するには、システム設定で機能拡張を有効にしてください。\n\n設定 → 一般 → ログイン項目と機能拡張 → DropMover")
+            }
+        }
+    }
+
+    /// Finder拡張機能の状態をチェックし、無効なら案内を表示
+    private func checkFinderExtensionStatus() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let status = FinderExtensionChecker.checkStatus()
+            DispatchQueue.main.async {
+                extensionStatus = status
+                if status != .enabled {
+                    showExtensionAlert = true
+                }
             }
         }
     }
