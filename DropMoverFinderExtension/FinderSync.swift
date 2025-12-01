@@ -10,6 +10,11 @@ import FinderSync
 
 class FinderSync: FIFinderSync {
 
+    /// DropMoverアプリのアイコン（キャッシュ）
+    private lazy var dropMoverIcon: NSImage = {
+        loadDropMoverIcon()
+    }()
+
     override init() {
         super.init()
 
@@ -29,7 +34,7 @@ class FinderSync: FIFinderSync {
     }
 
     override var toolbarItemImage: NSImage {
-        return NSImage(named: NSImage.folderName) ?? NSImage()
+        return dropMoverIcon
     }
 
     /// Finderの右クリックメニューに項目を追加
@@ -44,7 +49,7 @@ class FinderSync: FIFinderSync {
                 action: #selector(moveWithDropMover(_:)),
                 keyEquivalent: ""
             )
-            menuItem.image = NSImage(named: NSImage.folderName)
+            menuItem.image = menuIcon()
             menu.addItem(menuItem)
 
         case .toolbarItemMenu:
@@ -54,6 +59,7 @@ class FinderSync: FIFinderSync {
                 action: #selector(moveWithDropMover(_:)),
                 keyEquivalent: ""
             )
+            menuItem.image = menuIcon()
             menu.addItem(menuItem)
 
         default:
@@ -61,6 +67,48 @@ class FinderSync: FIFinderSync {
         }
 
         return menu
+    }
+
+    // MARK: - Icon Loading
+
+    /// DropMoverアプリのアイコンを取得
+    private func loadDropMoverIcon() -> NSImage {
+        let bundleID = "com.aabce.DropMover"
+
+        // NSWorkspaceからアプリのアイコンを取得
+        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            return NSWorkspace.shared.icon(forFile: appURL.path)
+        }
+
+        // フォールバック: 親アプリのバンドルから取得を試みる
+        // 拡張機能は DropMover.app/Contents/PlugIns/DropMoverFinderExtension.appex にある
+        let extensionURL = Bundle.main.bundleURL
+        let appURL = extensionURL
+            .deletingLastPathComponent()  // PlugIns
+            .deletingLastPathComponent()  // Contents
+            .deletingLastPathComponent()  // DropMover.app
+
+        if FileManager.default.fileExists(atPath: appURL.path) {
+            return NSWorkspace.shared.icon(forFile: appURL.path)
+        }
+
+        // 最終フォールバック
+        return NSImage(named: NSImage.applicationIconName) ?? NSImage()
+    }
+
+    /// メニュー用のアイコン（16x16にリサイズ）
+    private func menuIcon() -> NSImage {
+        let size = NSSize(width: 16, height: 16)
+        let resized = NSImage(size: size)
+        resized.lockFocus()
+        dropMoverIcon.draw(
+            in: NSRect(origin: .zero, size: size),
+            from: NSRect(origin: .zero, size: dropMoverIcon.size),
+            operation: .sourceOver,
+            fraction: 1.0
+        )
+        resized.unlockFocus()
+        return resized
     }
 
     /// メニュー項目が選択されたときの処理
