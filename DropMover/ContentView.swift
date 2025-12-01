@@ -400,21 +400,23 @@ struct ContentView: View {
         providers: [NSItemProvider],
         dropPoint: CGPoint
     ) -> Bool {
-        // ドロップ順を保持
-        var slots: [URL?] = Array(repeating: nil, count: providers.count)
+        // スレッドセーフなアクセスのためにクラスを使用
+        let collector = URLCollector(count: providers.count)
         let group = DispatchGroup()
-        
+
         for (i, p) in providers.enumerated()
         where p.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
             group.enter()
             p.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                if let u = FileDropHelper.url(from: item) { slots[i] = u }
-                group.leave()
+                defer { group.leave() }
+                if let u = FileDropHelper.url(from: item) {
+                    collector.set(url: u, at: i)
+                }
             }
         }
-        
+
         group.notify(queue: .main) {
-            let urls = slots.compactMap { $0 }
+            let urls = collector.urls()
             guard !urls.isEmpty else { return }
             dropContext = DropContext(
                 urls: urls,
@@ -424,6 +426,29 @@ struct ContentView: View {
             )
         }
         return true
+    }
+}
+
+// MARK: - Thread-safe URL Collector
+/// 複数スレッドから安全にURLを収集するためのクラス
+private class URLCollector {
+    private var slots: [URL?]
+    private let lock = NSLock()
+
+    init(count: Int) {
+        self.slots = Array(repeating: nil, count: count)
+    }
+
+    func set(url: URL, at index: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        slots[index] = url
+    }
+
+    func urls() -> [URL] {
+        lock.lock()
+        defer { lock.unlock() }
+        return slots.compactMap { $0 }
     }
 }
 
@@ -589,16 +614,25 @@ struct SheetView: View {
     
     private func moveFiles(to targetURL: URL, errors: inout [String]) {
         let fm = FileManager.default
-        
+        // 同じ名前のファイルが複数ある場合の競合を追跡
+        var usedNames: Set<String> = []
+
         for src in droppedURLs {
-            let dest = uniqueDestination(for: src.lastPathComponent, in: targetURL)
+            let originalName = src.lastPathComponent
+            let dest = uniqueDestination(
+                for: originalName,
+                in: targetURL,
+                usedNames: &usedNames
+            )
             do {
                 try fm.moveItem(at: src, to: dest)
+                // 成功したら使用済み名前に追加
+                usedNames.insert(dest.lastPathComponent)
             } catch {
-                errors.append("・'\(src.lastPathComponent)' の移動に失敗: \(error.localizedDescription)")
+                errors.append("・'\(originalName)' の移動に失敗: \(error.localizedDescription)")
             }
         }
-        
+
         do {
             var rv = URLResourceValues()
             rv.creationDate = selectedDate
@@ -609,20 +643,32 @@ struct SheetView: View {
             errors.append("・フォルダのタイムスタンプ変更に失敗: \(error.localizedDescription)")
         }
     }
-    
-    private func uniqueDestination(for name: String, in dir: URL) -> URL {
+
+    /// ファイル名の重複を避けてユニークな宛先URLを返す
+    /// - Parameters:
+    ///   - name: 元のファイル名
+    ///   - dir: 移動先ディレクトリ
+    ///   - usedNames: 今回のバッチで既に使用された名前のセット（競合回避用）
+    private func uniqueDestination(
+        for name: String,
+        in dir: URL,
+        usedNames: inout Set<String>
+    ) -> URL {
         let fm = FileManager.default
-        var candidate = dir.appendingPathComponent(name)
-        guard fm.fileExists(atPath: candidate.path) else { return candidate }
-        
         let base = (name as NSString).deletingPathExtension
         let ext = (name as NSString).pathExtension
+
+        var candidateName = name
+        var candidate = dir.appendingPathComponent(candidateName)
         var i = 2
-        repeat {
-            let newName = ext.isEmpty ? "\(base) (\(i))" : "\(base) (\(i)).\(ext)"
-            candidate = dir.appendingPathComponent(newName)
+
+        // ファイルシステム上に存在するか、または今回のバッチで使用済みの場合はリネーム
+        while fm.fileExists(atPath: candidate.path) || usedNames.contains(candidateName) {
+            candidateName = ext.isEmpty ? "\(base) (\(i))" : "\(base) (\(i)).\(ext)"
+            candidate = dir.appendingPathComponent(candidateName)
             i += 1
-        } while fm.fileExists(atPath: candidate.path)
+        }
+
         return candidate
     }
     
