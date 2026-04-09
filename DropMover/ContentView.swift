@@ -536,6 +536,10 @@ struct SheetView: View {
         }
         .padding(20)
         .frame(width: 400)
+        .onAppear {
+            isFolderNameFocused = true
+            selectAllText()
+        }
     }
     
     // MARK: - UI fragments
@@ -565,12 +569,6 @@ struct SheetView: View {
                         performMove()
                     }
                 }
-        }
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                isFolderNameFocused = true
-                selectAllText()
-            }
         }
     }
 
