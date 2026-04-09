@@ -489,6 +489,7 @@ struct SheetView: View {
     
     @State private var selectedDate: Date
     @State private var folderName = ""
+    @FocusState private var isFolderNameFocused: Bool
     
     init(
         initialDate: Date,
@@ -558,11 +559,28 @@ struct SheetView: View {
             Text("フォルダ名:")
             TextField("フォルダ名を入力してください", text: $folderName)
                 .textFieldStyle(.roundedBorder)
+                .focused($isFolderNameFocused)
                 .onSubmit {
                     if !folderName.trimmingCharacters(in: .whitespaces).isEmpty {
                         performMove()
                     }
                 }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                isFolderNameFocused = true
+                selectAllText()
+            }
+        }
+    }
+
+    /// テキストフィールドの内容を全選択する
+    private func selectAllText() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let window = NSApp.keyWindow,
+               let fieldEditor = window.fieldEditor(false, for: nil) as? NSTextView {
+                fieldEditor.selectAll(nil)
+            }
         }
     }
     
