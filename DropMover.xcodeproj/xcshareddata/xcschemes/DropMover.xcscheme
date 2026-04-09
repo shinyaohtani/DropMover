@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1640"
+   LastUpgradeVersion = "2611"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES"
-      buildArchitectures = "Automatic">
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -15,9 +15,51 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "0BD9A8372DED87AB00DC66DE"
+               BlueprintIdentifier = "142565732BE8FB3E35608819"
                BuildableName = "DropMover.app"
                BlueprintName = "DropMover"
+               ReferencedContainer = "container:DropMover.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B99BE2625AC96E0176DE8D7B"
+               BuildableName = "DropMoverFinderExtension.appex"
+               BlueprintName = "DropMoverFinderExtension"
+               ReferencedContainer = "container:DropMover.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0334CCF73F3F78FED85D9EE2"
+               BuildableName = "DropMoverTests.xctest"
+               BlueprintName = "DropMoverTests"
+               ReferencedContainer = "container:DropMover.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "D5C893FCD3BBD5FC99421D6D"
+               BuildableName = "DropMoverUITests.xctest"
+               BlueprintName = "DropMoverUITests"
                ReferencedContainer = "container:DropMover.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -28,14 +70,23 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "142565732BE8FB3E35608819"
+            BuildableName = "DropMover.app"
+            BlueprintName = "DropMover"
+            ReferencedContainer = "container:DropMover.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
       <Testables>
          <TestableReference
             skipped = "NO"
-            parallelizable = "YES">
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "0BD9A8452DED87AC00DC66DE"
+               BlueprintIdentifier = "0334CCF73F3F78FED85D9EE2"
                BuildableName = "DropMoverTests.xctest"
                BlueprintName = "DropMoverTests"
                ReferencedContainer = "container:DropMover.xcodeproj">
@@ -43,16 +94,18 @@
          </TestableReference>
          <TestableReference
             skipped = "NO"
-            parallelizable = "YES">
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "0BD9A84F2DED87AC00DC66DE"
+               BlueprintIdentifier = "D5C893FCD3BBD5FC99421D6D"
                BuildableName = "DropMoverUITests.xctest"
                BlueprintName = "DropMoverUITests"
                ReferencedContainer = "container:DropMover.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Release"
@@ -68,12 +121,14 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "0BD9A8372DED87AB00DC66DE"
+            BlueprintIdentifier = "142565732BE8FB3E35608819"
             BuildableName = "DropMover.app"
             BlueprintName = "DropMover"
             ReferencedContainer = "container:DropMover.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -85,12 +140,14 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "0BD9A8372DED87AB00DC66DE"
+            BlueprintIdentifier = "142565732BE8FB3E35608819"
             BuildableName = "DropMover.app"
             BlueprintName = "DropMover"
             ReferencedContainer = "container:DropMover.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
