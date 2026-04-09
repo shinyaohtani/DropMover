@@ -26,3 +26,5 @@ fastlane/test_output
 *.swp
 *.lock
 .env
+.claude/settings.local.json
+refs-other-proj/
