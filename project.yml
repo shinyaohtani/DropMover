@@ -1,0 +1,141 @@
+name: DropMover
+options:
+  bundleIdPrefix: com.aabce
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "2611"
+settings:
+  base:
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+
+targets:
+  DropMover:
+    type: application
+    platform: macOS
+    sources:
+      - DropMover
+    info:
+      path: DropMover/Info.plist
+      properties:
+        NSDocumentFolderUsageDescription: "フォルダを作成し、ファイルを移動するためにアクセスが必要です。"
+        CFBundleURLTypes:
+          - CFBundleURLName: com.aabce.DropMover
+            CFBundleURLSchemes:
+              - dropmover
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: "All Documents"
+            LSItemContentTypes:
+              - public.data
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+        NSFileAccessEnabled:
+          - ""
+    entitlements:
+      path: DropMover/DropMover.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.assets.movies.read-write: true
+        com.apple.security.assets.music.read-write: true
+        com.apple.security.assets.pictures.read-write: true
+        com.apple.security.files.downloads.read-write: true
+        com.apple.security.files.user-selected.read-write: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aabce.DropMover
+        DEVELOPMENT_TEAM: PNKEK75AK4
+        INFOPLIST_KEY_CFBundleDisplayName: DropMover
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.utilities"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "(C) Shinya Ohtani"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "5.0"
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_PREVIEWS: YES
+        REGISTER_APP_GROUPS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: DropMoverFinderExtension
+        embed: true
+        codeSign: true
+
+  DropMoverFinderExtension:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: DropMoverFinderExtension
+        excludes:
+          - Info.plist
+    info:
+      path: DropMoverFinderExtension/Info.plist
+      properties:
+        CFBundleDisplayName: "DropMover Finder Extension"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.FinderSync
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).FinderSync"
+        NSHumanReadableCopyright: "(C) Shinya Ohtani"
+    entitlements:
+      path: DropMoverFinderExtension/DropMoverFinderExtension.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.files.user-selected.read-write: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aabce.DropMover.FinderExtension
+        DEVELOPMENT_TEAM: PNKEK75AK4
+        INFOPLIST_KEY_CFBundleDisplayName: "DropMover Finder Extension"
+        INFOPLIST_KEY_NSHumanReadableCopyright: "(C) Shinya Ohtani"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "5.0"
+        SKIP_INSTALL: YES
+
+  DropMoverTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - DropMoverTests
+    dependencies:
+      - target: DropMover
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aabce.DropMoverTests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: true
+        CODE_SIGN_STYLE: Automatic
+
+  DropMoverUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - DropMoverUITests
+    dependencies:
+      - target: DropMover
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aabce.DropMoverUITests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: true
+        CODE_SIGN_STYLE: Automatic
+
+schemes:
+  DropMover:
+    build:
+      targets:
+        DropMover: all
+        DropMoverFinderExtension: all
+        DropMoverTests: [test]
+        DropMoverUITests: [test]
+    run:
+      config: Release
+      debugEnabled: false
+    test:
+      config: Debug
+      targets:
+        - DropMoverTests
+        - DropMoverUITests
+    profile:
+      config: Release
